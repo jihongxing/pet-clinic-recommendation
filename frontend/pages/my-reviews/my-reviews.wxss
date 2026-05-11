@@ -1,0 +1,117 @@
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.review-card {
+  padding: 26rpx;
+}
+
+.review-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.review-card__clinic {
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.review-card__meta {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.review-card__emotion {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.review-card__emotion--satisfied {
+  background: #edf8f2;
+  color: #2f8e63;
+}
+
+.review-card__emotion--neutral {
+  background: #f6f1eb;
+  color: #8c6c52;
+}
+
+.review-card__emotion--unsatisfied {
+  background: #fff0ed;
+  color: #d86b4a;
+}
+
+.review-card__section {
+  margin-top: 22rpx;
+}
+
+.review-card__label {
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.review-card__tags {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.review-card__pill {
+  background: #fff4ed;
+}
+
+.review-card__extra-pill {
+  display: inline-block;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  background: #faf4ef;
+  color: #5f4d42;
+  font-size: 24rpx;
+}
+
+.review-card__text {
+  margin-top: 14rpx;
+  display: block;
+  color: #2f2925;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.review-card__footer {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.review-card__action {
+  color: #d86b4a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.state-card {
+  padding: 48rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}

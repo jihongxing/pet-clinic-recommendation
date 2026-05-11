@@ -1,0 +1,179 @@
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: pet-clinic-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_password}
+      POSTGRES_DB: ${DB_DATABASE:-pet_clinic_recommendation}
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+    networks:
+      - pet-clinic-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: pet-clinic-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - pet-clinic-network
+
+  # Prometheus指标采集
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pet-clinic-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - type: bind
+        source: ./monitoring/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+      - type: bind
+        source: ./monitoring/prometheus/alerts.yml
+        target: /etc/prometheus/alerts.yml
+        read_only: true
+      - prometheus_data:/prometheus
+    depends_on:
+      - backend
+      - alertmanager
+    networks:
+      - pet-clinic-network
+
+  # Alertmanager告警聚合
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: pet-clinic-alertmanager
+    restart: always
+    ports:
+      - "9093:9093"
+    volumes:
+      - type: bind
+        source: ./monitoring/alertmanager/alertmanager.yml
+        target: /etc/alertmanager/alertmanager.yml
+        read_only: true
+      - alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    networks:
+      - pet-clinic-network
+
+  # Grafana监控面板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pet-clinic-grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123456}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - type: bind
+        source: ./monitoring/grafana/provisioning/datasources
+        target: /etc/grafana/provisioning/datasources
+        read_only: true
+      - type: bind
+        source: ./monitoring/grafana/provisioning/dashboards
+        target: /etc/grafana/provisioning/dashboards
+        read_only: true
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - pet-clinic-network
+
+  # 后端API（开发环境）
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: pet-clinic-backend
+    restart: always
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3000}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres_password}
+      DB_DATABASE: ${DB_DATABASE:-pet_clinic_recommendation}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
+      WECHAT_APPID: ${WECHAT_APPID}
+      WECHAT_SECRET: ${WECHAT_SECRET}
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: ./backend
+        target: /app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - pet-clinic-network
+    command: npm run start:dev
+
+  # Nginx反向代理（生产环境）
+  nginx:
+    image: nginx:alpine
+    container_name: pet-clinic-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - type: bind
+        source: ./nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+      - type: bind
+        source: ./nginx/ssl
+        target: /etc/nginx/ssl
+    depends_on:
+      - backend
+    networks:
+      - pet-clinic-network
+
+volumes:
+  backend_node_modules:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  alertmanager_data:
+    driver: local
+  grafana_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  pet-clinic-network:
+    driver: bridge

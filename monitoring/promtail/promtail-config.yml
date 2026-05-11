@@ -1,0 +1,82 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: petmed-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: petmed-backend
+          service: backend
+          __path__: /var/log/petmed/backend/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            context: context
+            requestId: requestId
+            path: path
+            statusCode: statusCode
+            durationMs: durationMs
+            userId: userId
+            exceptionName: exceptionName
+      - labels:
+          level:
+          context:
+          exceptionName:
+      - static_labels:
+          log_type: application
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+          action_on_failure: skip
+
+  - job_name: petmed-nginx-access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: petmed-nginx-access
+          service: nginx
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            remote_addr: remote_addr
+            host: host
+            method: method
+            uri: uri
+            status: status
+            request_time: request_time
+            upstream_response_time: upstream_response_time
+            request_id: request_id
+      - labels:
+          method:
+          status:
+      - static_labels:
+          log_type: access
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+          action_on_failure: skip
+
+  - job_name: petmed-nginx-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: petmed-nginx-error
+          service: nginx
+          log_type: error
+          __path__: /var/log/nginx/error.log

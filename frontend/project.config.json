@@ -1,0 +1,19 @@
+{
+  "description": "petMed mini program",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": false
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.6.5",
+  "appid": "touristappid",
+  "projectname": "petMed",
+  "simulatorType": "wechat",
+  "srcMiniprogramRoot": "./"
+}

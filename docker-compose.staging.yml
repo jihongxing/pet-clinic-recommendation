@@ -1,0 +1,268 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: petmed-staging-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - petmed-staging
+
+  redis:
+    image: redis:7-alpine
+    container_name: petmed-staging-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_staging_data:/data
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - petmed-staging
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: petmed-staging-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_NAME: ${APP_NAME}
+      API_PREFIX: ${API_PREFIX}
+      TRUST_PROXY: "true"
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED}
+      SWAGGER_PATH: ${SWAGGER_PATH}
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      WECHAT_APPID: ${WECHAT_APPID}
+      WECHAT_SECRET: ${WECHAT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_DIR: ${LOG_DIR}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - backend_staging_logs:/app/logs
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/api/v1/health').then((response)=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - petmed-staging
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: petmed-staging-nginx
+    restart: unless-stopped
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - type: bind
+        source: ./nginx/nginx.staging.conf.template
+        target: /etc/nginx/templates/nginx.conf.template
+        read_only: true
+      - type: bind
+        source: ./nginx/ssl
+        target: /etc/nginx/ssl
+        read_only: true
+      - type: bind
+        source: ./nginx/www
+        target: /var/www/certbot
+        read_only: true
+      - nginx_staging_logs:/var/log/nginx
+    command:
+      - /bin/sh
+      - -c
+      - envsubst '$$DOMAIN_NAME' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - petmed-staging
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: petmed-staging-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - type: bind
+        source: ./monitoring/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+      - type: bind
+        source: ./monitoring/prometheus/alerts.yml
+        target: /etc/prometheus/alerts.yml
+        read_only: true
+      - prometheus_staging_data:/prometheus
+    depends_on:
+      backend:
+        condition: service_healthy
+      alertmanager:
+        condition: service_started
+    networks:
+      - petmed-staging
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: petmed-staging-alertmanager
+    restart: unless-stopped
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - type: bind
+        source: ./monitoring/alertmanager/alertmanager.yml
+        target: /etc/alertmanager/alertmanager.yml
+        read_only: true
+      - alertmanager_staging_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    networks:
+      - petmed-staging
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: petmed-staging-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - type: bind
+        source: ./monitoring/grafana/provisioning/datasources
+        target: /etc/grafana/provisioning/datasources
+        read_only: true
+      - type: bind
+        source: ./monitoring/grafana/provisioning/dashboards
+        target: /etc/grafana/provisioning/dashboards
+        read_only: true
+      - grafana_staging_data:/var/lib/grafana
+    depends_on:
+      loki:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    networks:
+      - petmed-staging
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: petmed-staging-loki
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/loki/config.yml"
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - type: bind
+        source: ./monitoring/loki/loki-config.yml
+        target: /etc/loki/config.yml
+        read_only: true
+      - loki_staging_data:/loki
+    networks:
+      - petmed-staging
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: petmed-staging-promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    volumes:
+      - type: bind
+        source: ./monitoring/promtail/promtail-config.yml
+        target: /etc/promtail/config.yml
+        read_only: true
+      - backend_staging_logs:/var/log/petmed/backend:ro
+      - nginx_staging_logs:/var/log/nginx:ro
+      - promtail_staging_data:/tmp/promtail
+    depends_on:
+      backend:
+        condition: service_healthy
+      nginx:
+        condition: service_started
+      loki:
+        condition: service_started
+    networks:
+      - petmed-staging
+
+volumes:
+  postgres_staging_data:
+    driver: local
+  redis_staging_data:
+    driver: local
+  backend_staging_logs:
+    driver: local
+  nginx_staging_logs:
+    driver: local
+  prometheus_staging_data:
+    driver: local
+  alertmanager_staging_data:
+    driver: local
+  grafana_staging_data:
+    driver: local
+  loki_staging_data:
+    driver: local
+  promtail_staging_data:
+    driver: local
+
+networks:
+  petmed-staging:
+    driver: bridge

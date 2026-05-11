@@ -1,0 +1,45 @@
+groups:
+  - name: petmed-backend-alerts
+    rules:
+      - alert: PetMedBackendDown
+        expr: up{job="petmed-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "PetMed backend 服务不可用"
+          description: "Prometheus 连续 1 分钟无法抓取 petmed-backend 的 /metrics。"
+
+      - alert: PetMedHighApiErrorRate
+        expr: |
+          (
+            sum(rate(api_request_errors_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(api_requests_total[5m])), 0.0001)
+          ) > 0.05
+          and
+          sum(rate(api_requests_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "PetMed API 5xx 错误率过高"
+          description: "过去 5 分钟 API 5xx 错误率持续超过 5%，且当前请求速率超过 1 req/s。"
+
+      - alert: PetMedSlowApiP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(api_response_time_seconds_bucket[5m]))
+          ) > 2
+          and
+          sum(rate(api_requests_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "PetMed API P95 响应时间过慢"
+          description: "过去 5 分钟 API P95 响应时间持续超过 2 秒。"

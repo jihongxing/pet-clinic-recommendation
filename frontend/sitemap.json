@@ -1,0 +1,9 @@
+{
+  "desc": "petMed sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

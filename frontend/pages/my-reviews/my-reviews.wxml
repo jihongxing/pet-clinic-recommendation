@@ -1,0 +1,60 @@
+<view class="page-shell">
+  <view wx:if="{{loading}}" class="card state-card">
+    正在加载我的评价...
+  </view>
+
+  <view wx:elif="{{reviews.length === 0}}" class="card state-card">
+    <text class="state-card__title">你还没有留下评价</text>
+    <text class="muted">看过诊所、体验过服务之后，再回来补充你的真实反馈吧。</text>
+  </view>
+
+  <view wx:else class="review-list">
+    <view
+      wx:for="{{reviews}}"
+      wx:key="id"
+      class="card review-card"
+      data-clinic-id="{{item.clinic.id}}"
+      bindtap="goToClinicDetail"
+    >
+      <view class="review-card__header">
+        <view>
+          <view class="review-card__clinic">{{item.clinic.name}}</view>
+          <view class="muted review-card__meta">{{item.clinic.address}}</view>
+        </view>
+        <text class="review-card__emotion {{item.emotionBadgeClass}}">{{item.emotionLabel}}</text>
+      </view>
+
+      <view class="review-card__section">
+        <text class="review-card__label">主标签</text>
+        <view class="review-card__tags">
+          <text wx:for="{{item.tags}}" wx:key="id" class="pill review-card__pill">
+            {{item.name}}
+          </text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.extraTags.length > 0}}" class="review-card__section">
+        <text class="review-card__label">补充标签</text>
+        <view class="review-card__tags">
+          <text
+            wx:for="{{item.extraTags}}"
+            wx:key="id"
+            class="review-card__extra-pill"
+          >
+            {{item.name}}
+          </text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.reviewText}}" class="review-card__section">
+        <text class="review-card__label">文字说明</text>
+        <text class="review-card__text">{{item.reviewText}}</text>
+      </view>
+
+      <view class="review-card__footer">
+        <text class="muted">{{item.submittedAtText}}</text>
+        <text class="review-card__action">查看诊所详情</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,48 @@
+<view class="page-shell page-shell--map">
+  <view class="map-panel card">
+    <view>
+      <view class="map-panel__title">{{cityLabel}}</view>
+      <text class="muted">{{locationHint}}</text>
+    </view>
+    <text class="map-panel__action" bindtap="refreshMap">刷新位置</text>
+  </view>
+
+  <map
+    class="map-view card"
+    latitude="{{latitude}}"
+    longitude="{{longitude}}"
+    scale="{{scale}}"
+    markers="{{markers}}"
+    bindmarkertap="onMarkerTap"
+    show-location
+  />
+
+  <view wx:if="{{loading}}" class="state-card card">
+    正在加载地图数据...
+  </view>
+
+  <view wx:elif="{{!selectedClinic}}" class="state-card card">
+    <text class="state-card__title">附近还没有可展示的诊所</text>
+    <text class="muted">可以稍后刷新位置再试一次</text>
+  </view>
+
+  <view wx:else class="summary-card card" bindtap="goToDetail">
+    <view class="summary-card__header">
+      <view class="summary-card__title">
+        <text class="summary-card__name">{{selectedClinic.name}}</text>
+        <text wx:if="{{selectedClinic.isClaimed}}" class="claimed-badge">已认领</text>
+      </view>
+      <text class="muted">{{selectedClinic.distanceText}}</text>
+    </view>
+    <text class="summary-card__address muted">{{selectedClinic.address}}</text>
+    <view class="summary-card__metrics">
+      <text class="metric-pill">口碑 {{selectedClinic.reputationScoreText}}</text>
+      <text class="metric-pill metric-pill--value">性价比 {{selectedClinic.priceScoreText}}</text>
+      <text class="metric-pill metric-pill--soft">可信度 {{selectedClinic.confidenceText}}</text>
+    </view>
+    <view class="summary-card__footer">
+      <text class="muted">{{selectedClinic.totalUsers}} 人打过标签</text>
+      <text class="summary-card__action">查看详情</text>
+    </view>
+  </view>
+</view>

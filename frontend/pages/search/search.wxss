@@ -1,0 +1,155 @@
+.search-box {
+  padding: 20rpx 24rpx;
+}
+
+.search-box__row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.search-box__input {
+  flex: 1;
+  height: 72rpx;
+}
+
+.search-box__button {
+  flex-shrink: 0;
+  min-width: 132rpx;
+  min-height: 72rpx;
+  border-radius: 18rpx;
+  background: #d86b4a;
+  color: #ffffff;
+  font-size: 28rpx;
+}
+
+.search-box__hint {
+  display: block;
+  margin-top: 12rpx;
+}
+
+.section {
+  margin-top: 28rpx;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-head__action {
+  color: #d86b4a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.history-pill {
+  border: 1rpx solid #f0dfd4;
+}
+
+.state-card {
+  padding: 44rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  align-items: center;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}
+
+.result-card {
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.result-card__header,
+.result-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.result-card__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.result-card__name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.claimed-badge {
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: #eef8f2;
+  color: #2f8e63;
+  font-size: 22rpx;
+}
+
+.result-card__address {
+  display: block;
+  margin-top: 12rpx;
+  line-height: 1.6;
+}
+
+.result-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: 18rpx 0;
+}
+
+.metric-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: #eef8f2;
+  color: #2f8e63;
+  font-size: 24rpx;
+}
+
+.metric-pill--value {
+  background: #eef4ff;
+  color: #4b7bec;
+}
+
+.metric-pill--soft {
+  background: #faf4ef;
+  color: #7a6c63;
+}
+
+.result-card__action {
+  color: #d86b4a;
+  font-weight: 600;
+}
+
+.load-more {
+  margin-top: 8rpx;
+}
+
+.load-more__button {
+  border-radius: 999rpx;
+  border: 1rpx solid #ecd7c9;
+  background: #fffdfb;
+  color: #5f4d42;
+  font-size: 28rpx;
+}

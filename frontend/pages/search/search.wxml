@@ -1,0 +1,88 @@
+<view class="page-shell">
+  <view class="search-box card">
+    <view class="search-box__row">
+      <input
+        class="search-box__input"
+        placeholder="搜索诊所名称或地址"
+        value="{{keyword}}"
+        confirm-type="search"
+        bindinput="onInput"
+        bindconfirm="onConfirm"
+      />
+      <button class="search-box__button" bindtap="onConfirm">搜索</button>
+    </view>
+    <text class="muted search-box__hint">{{locationHint}}</text>
+  </view>
+
+  <view wx:if="{{histories.length > 0}}" class="section">
+    <view class="section-head">
+      <view class="section-title">搜索历史</view>
+      <text class="section-head__action" bindtap="clearHistories">清空</text>
+    </view>
+    <view class="history-list">
+      <text
+        wx:for="{{histories}}"
+        wx:key="*this"
+        class="pill history-pill"
+        data-keyword="{{item}}"
+        bindtap="onHistoryTap"
+      >
+        {{item}}
+      </text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="section">
+    <view class="state-card card">正在搜索相关诊所...</view>
+  </view>
+
+  <view wx:elif="{{searchedKeyword && results.length === 0}}" class="section">
+    <view class="state-card card">
+      <text class="state-card__title">没有找到相关诊所</text>
+      <text class="muted">试试换个关键词，或者搜索诊所地址片段</text>
+    </view>
+  </view>
+
+  <view wx:elif="{{results.length > 0}}" class="section">
+    <view class="section-head">
+      <view class="section-title">搜索结果</view>
+      <text class="muted">“{{searchedKeyword}}” 共 {{total}} 条</text>
+    </view>
+
+    <view
+      wx:for="{{results}}"
+      wx:key="id"
+      class="result-card card"
+      data-id="{{item.id}}"
+      bindtap="goToDetail"
+    >
+      <view class="result-card__header">
+        <view class="result-card__title">
+          <text class="result-card__name">{{item.name}}</text>
+          <text wx:if="{{item.isClaimed}}" class="claimed-badge">已认领</text>
+        </view>
+        <text class="muted">{{item.distanceText}}</text>
+      </view>
+      <text class="result-card__address muted">{{item.address}}</text>
+      <view class="result-card__metrics">
+        <text class="metric-pill">口碑 {{item.reputationScoreText}}</text>
+        <text class="metric-pill metric-pill--value">性价比 {{item.priceScoreText}}</text>
+        <text class="metric-pill metric-pill--soft">可信度 {{item.confidenceText}}</text>
+      </view>
+      <view class="result-card__footer">
+        <text class="muted">{{item.phone || '暂无电话'}} · {{item.businessHours || '营业时间待补充'}}</text>
+        <text class="result-card__action">查看详情</text>
+      </view>
+    </view>
+
+    <view wx:if="{{results.length < total}}" class="load-more">
+      <button
+        class="load-more__button"
+        loading="{{loadingMore}}"
+        bindtap="loadMore"
+      >
+        {{loadingMore ? '加载中...' : '加载更多'}}
+      </button>
+    </view>
+  </view>
+</view>

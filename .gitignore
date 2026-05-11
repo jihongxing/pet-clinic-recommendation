@@ -1,0 +1,60 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# Env files
+.env
+.env.local
+.env.*.local
+.env.staging
+backend/.env
+frontend/.env
+
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build output
+dist/
+coverage/
+backend/dist/
+frontend/dist/
+
+# Runtime logs
+logs/
+*.log
+backend/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test / temp output
+.cache/
+.tmp/
+tmp/
+
+# Mini program local-only files
+frontend/project.private.config.json
+frontend/project.private.config.*.json
+
+# Container / monitoring local data
+monitoring/**/data/
+
+# TLS certificates and private keys
+nginx/ssl/*
+!nginx/ssl/.gitkeep
+!nginx/ssl/README.md
+!nginx/ssl/live/
+nginx/ssl/live/*
+!nginx/ssl/live/.gitkeep
+nginx/ssl/**/*.pem
+nginx/ssl/**/*.key
+
+# Certbot / ACME challenge runtime files
+nginx/www/.well-known/
+!nginx/www/.gitkeep

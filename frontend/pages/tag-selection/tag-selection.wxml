@@ -1,0 +1,156 @@
+<view class="page-shell review-page">
+  <view class="card review-hero">
+    <view class="review-hero__eyebrow">结构化反馈</view>
+    <view class="review-hero__title">
+      {{clinicName ? ('帮「' + clinicName + '」留下一次真实反馈') : '留下这次就诊体验'}}
+    </view>
+    <view class="review-hero__meta">
+      <text class="review-hero__badge">{{source === 'order' ? '预约评价' : '普通评价'}}</text>
+      <text class="muted review-hero__hint">
+        {{source === 'order' ? '系统会按预约来源校验并计入更高权重' : '未绑定预约也可以提交普通反馈'}}
+      </text>
+    </view>
+
+    <view class="stepper">
+      <view class="stepper__item {{step >= 1 ? 'stepper__item--active' : ''}}">
+        <text class="stepper__index">1</text>
+        <text>选情绪</text>
+      </view>
+      <view class="stepper__line {{step >= 2 ? 'stepper__line--active' : ''}}"></view>
+      <view class="stepper__item {{step >= 2 ? 'stepper__item--active' : ''}}">
+        <text class="stepper__index">2</text>
+        <text>选原因</text>
+      </view>
+      <view class="stepper__line {{step >= 3 ? 'stepper__line--active' : ''}}"></view>
+      <view class="stepper__item {{step >= 3 ? 'stepper__item--active' : ''}}">
+        <text class="stepper__index">3</text>
+        <text>补充细节</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">这次就诊体验怎么样？</view>
+    <view class="muted section-subtitle">先用一个情绪快速定调，后面的原因标签会跟着变化</view>
+    <view class="emotion-grid">
+      <view
+        wx:for="{{emotions}}"
+        wx:key="value"
+        class="card emotion-card {{emotion === item.value ? 'emotion-card--active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="chooseEmotion"
+      >
+        <text class="emotion-card__icon">{{item.icon}}</text>
+        <text class="emotion-card__label">{{item.label}}</text>
+        <text class="emotion-card__description">{{item.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{configLoading}}" class="card state-card">
+    正在加载对应的原因标签...
+  </view>
+
+  <view wx:if="{{step >= 2 && !configLoading && emotion}}" class="section">
+    <view class="section-heading">
+      <view>
+        <view class="section-title">{{title || '请选择原因'}}</view>
+        <view class="muted section-subtitle">
+          已选 {{selectedTagIds.length}} / {{limits.maxSelect}}，至少 {{limits.minSelect}} 个
+        </view>
+      </view>
+      <text class="section-action" bindtap="backToEmotion">重选情绪</text>
+    </view>
+
+    <view class="reason-grid">
+      <view
+        wx:for="{{reasonOptions}}"
+        wx:key="id"
+        class="card reason-card {{item.selected ? 'reason-card--active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="toggleReason"
+      >
+        <text class="reason-card__name">{{item.name}}</text>
+        <text class="reason-card__meta">{{item.mappedTagName}}</text>
+      </view>
+    </view>
+
+    <button
+      wx:if="{{step === 2}}"
+      class="primary-button review-button"
+      disabled="{{selectedTagIds.length < limits.minSelect}}"
+      bindtap="continueToExtras"
+    >
+      下一步，补充细节
+    </button>
+  </view>
+
+  <view wx:if="{{step >= 3 && !configLoading && emotion}}" class="section">
+    <view class="section-heading">
+      <view>
+        <view class="section-title">还有哪些补充印象？</view>
+        <view class="muted section-subtitle">
+          最多再补充 {{limits.maxExtra}} 个标签，这一步可以跳过
+        </view>
+      </view>
+      <text class="section-action" bindtap="backToReasons">返回上一步</text>
+    </view>
+
+    <view class="summary-card card">
+      <text class="summary-card__label">已选原因</text>
+      <view class="summary-card__tags">
+        <text
+          wx:for="{{selectedReasonOptions}}"
+          wx:key="id"
+          class="pill summary-card__pill"
+        >
+          {{item.name}}
+        </text>
+      </view>
+    </view>
+
+    <view wx:if="{{extraOptions.length > 0}}" class="extra-grid">
+      <view
+        wx:for="{{extraOptions}}"
+        wx:key="id"
+        class="extra-pill {{item.selected ? 'extra-pill--active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="toggleExtra"
+      >
+        {{item.name}}
+      </view>
+    </view>
+
+    <view wx:else class="card state-card state-card--compact">
+      当前情绪下没有额外补充标签，已经可以直接提交
+    </view>
+
+    <view class="text-card card">
+      <view class="section-heading section-heading--compact">
+        <view>
+          <view class="text-card__title">还想补充一句吗？</view>
+          <view class="muted text-card__hint">
+            这段文字只做留存展示，不参与首页排序，可以留空
+          </view>
+        </view>
+        <text class="text-card__counter">{{reviewText.length}} / {{reviewTextLimit}}</text>
+      </view>
+      <textarea
+        class="text-card__textarea"
+        maxlength="{{reviewTextLimit}}"
+        placeholder="比如这次沟通是否清楚、护理建议是否有帮助，或者最让你在意的一点。"
+        value="{{reviewText}}"
+        bindinput="handleReviewTextInput"
+      ></textarea>
+    </view>
+
+    <button
+      class="primary-button review-button"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="submitReview"
+    >
+      提交评价
+    </button>
+  </view>
+</view>

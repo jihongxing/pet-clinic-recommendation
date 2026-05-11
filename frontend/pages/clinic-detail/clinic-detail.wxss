@@ -1,0 +1,164 @@
+.detail-card {
+  padding: 28rpx;
+}
+
+.detail-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24rpx;
+}
+
+.distance-badge {
+  flex-shrink: 0;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: #fff1ea;
+  color: #d86b4a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 22rpx 18rpx;
+  border-radius: 20rpx;
+  background: #faf4ef;
+}
+
+.score-card__value {
+  color: #2f2925;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.score-card__value--high {
+  color: #289168;
+}
+
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 18rpx;
+}
+
+.section {
+  margin-top: 28rpx;
+}
+
+.section-title--compact {
+  margin-bottom: 0;
+  font-size: 32rpx;
+}
+
+.tag-group {
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.tag-group__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.tag-group__title {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.tag-group__badge {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+}
+
+.tag-group__badge--trust {
+  background: #d86b4a;
+}
+
+.tag-group__badge--value {
+  background: #2f8e63;
+}
+
+.tag-group__badge--experience {
+  background: #4b7bec;
+}
+
+.tag-group__badge--social {
+  background: #9b59b6;
+}
+
+.tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.tag-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.tag-item__pill {
+  align-self: flex-start;
+}
+
+.tag-item__meta {
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.state-card {
+  padding: 48rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}
+
+.detail-actions {
+  margin-top: 36rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.detail-actions--primary {
+  grid-template-columns: 1fr;
+  margin-top: 18rpx;
+  padding-bottom: 24rpx;
+}
+
+.action-button {
+  min-height: 84rpx;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+}
+
+.action-button--ghost {
+  border: 1rpx solid #ecd7c9;
+  background: #fffdfb;
+  color: #5f4d42;
+}

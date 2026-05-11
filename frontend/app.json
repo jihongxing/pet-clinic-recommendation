@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/search/search",
+    "pages/map/map",
+    "pages/profile/profile",
+    "pages/my-reviews/my-reviews",
+    "pages/clinic-detail/clinic-detail",
+    "pages/tag-selection/tag-selection"
+  ],
+  "window": {
+    "navigationBarTitleText": "宠物诊所推荐",
+    "navigationBarBackgroundColor": "#FFF7F2",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FDF7F1",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#7A6C63",
+    "selectedColor": "#D86B4A",
+    "backgroundColor": "#FFFDFB",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/search/search",
+        "text": "搜索"
+      },
+      {
+        "pagePath": "pages/map/map",
+        "text": "地图"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

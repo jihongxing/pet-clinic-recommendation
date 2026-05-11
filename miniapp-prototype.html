@@ -1,0 +1,2174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>宠物诊所推荐 - 小程序原型</title>
+  <style>
+    :root {
+      /* Warm & Soft Direction - 温暖友好 */
+      --bg: oklch(97% 0.018 70);
+      --surface: oklch(99% 0.008 70);
+      --fg: oklch(22% 0.02 50);
+      --muted: oklch(50% 0.018 50);
+      --border: oklch(90% 0.014 70);
+      --accent: oklch(64% 0.13 28);
+
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      --shadow-sm: 0 1px 3px oklch(22% 0.02 50 / 0.08);
+      --shadow-md: 0 4px 12px oklch(22% 0.02 50 / 0.1);
+      --shadow-lg: 0 8px 24px oklch(22% 0.02 50 / 0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: #f5f5f5;
+      color: var(--fg);
+      font-size: 16px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* 小程序容器 - iPhone 尺寸 */
+    .miniapp-container {
+      max-width: 390px;
+      margin: 0 auto;
+      background: var(--bg);
+      min-height: 100vh;
+      position: relative;
+      box-shadow: 0 0 40px oklch(22% 0.02 50 / 0.15);
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 44px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--fg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .status-bar .time {
+      font-weight: 600;
+    }
+
+    .status-bar .icons {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    /* 导航栏 */
+    .navbar {
+      background: var(--surface);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar-title {
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--fg);
+    }
+
+    /* 页面内容 */
+    .page {
+      display: none;
+      min-height: calc(100vh - 44px - 49px - 60px);
+      padding-bottom: 80px;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* 首页 - 顶部区域 */
+    .home-header {
+      background: var(--surface);
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .location-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .location-text {
+      font-size: 15px;
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    .location-icon {
+      font-size: 16px;
+    }
+
+    /* 距离筛选 */
+    .distance-filter {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .distance-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .distance-btn.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* 更多筛选 */
+    .more-filters {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .filter-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-label {
+      font-size: 13px;
+      color: var(--muted);
+      min-width: 60px;
+      font-weight: 500;
+    }
+
+    .filter-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .filter-option {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .filter-option.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .filter-option:active {
+      transform: scale(0.95);
+    }
+
+    /* Tab切换 */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+    }
+
+    .tab-item {
+      flex: 1;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .tab-item.active {
+      background: var(--surface);
+      color: var(--fg);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* 标签筛选 */
+    .tag-filter {
+      padding: 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tag-filter::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tag-list {
+      display: flex;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tag.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* 诊所列表 */
+    .clinic-list {
+      padding: 16px;
+    }
+
+    .clinic-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .clinic-card:active {
+      transform: scale(0.98);
+      box-shadow: var(--shadow-md);
+    }
+
+    .clinic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .clinic-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+
+    .clinic-distance {
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .clinic-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .clinic-tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+
+    .clinic-tag.highlight {
+      background: oklch(64% 0.13 28 / 0.1);
+      color: var(--accent);
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .clinic-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* 新增：综合评分和性价比指数 */
+    .clinic-score {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .score-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .score-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .score-value.high {
+      color: oklch(58% 0.16 145);
+    }
+
+    .clinic-stat {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .clinic-action {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* 底部导航 */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 390px;
+      width: 100%;
+      height: 60px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+    }
+
+    .tabbar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 8px 0;
+    }
+
+    .tabbar-item .icon {
+      width: 24px;
+      height: 24px;
+      font-size: 24px;
+      transition: transform 0.2s;
+    }
+
+    .tabbar-item .label {
+      font-size: 11px;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .tabbar-item.active .icon {
+      transform: scale(1.1);
+    }
+
+    .tabbar-item.active .label {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* 屏幕导航 */
+    .screen-nav {
+      position: fixed;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .screen-nav-item {
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .screen-nav-item:hover {
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    .screen-nav-item.active {
+      background: var(--accent);
+      color: var(--surface);
+      font-weight: 600;
+    }
+
+    /* 诊所详情页 */
+    .detail-page {
+      display: none;
+      min-height: calc(100vh - 44px - 49px);
+      padding-bottom: 80px;
+    }
+
+    .detail-page.active {
+      display: block;
+    }
+
+    .detail-header {
+      background: var(--surface);
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-clinic-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 12px;
+    }
+
+    .detail-info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .detail-info-row .icon {
+      font-size: 16px;
+      margin-top: 2px;
+    }
+
+    .detail-info-row .text {
+      flex: 1;
+      line-height: 1.6;
+    }
+
+    .detail-section {
+      background: var(--surface);
+      margin-top: 12px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag-group {
+      margin-bottom: 16px;
+    }
+
+    .tag-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .tag-group-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .tag-group-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-with-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+
+    /* 信任类标签 - 高权重样式 */
+    .tag-group:first-of-type .tag-with-count {
+      background: oklch(64% 0.13 28 / 0.12);
+      border: 1.5px solid var(--accent);
+      font-weight: 500;
+    }
+
+    .tag-group:first-of-type .tag-group-title {
+      color: var(--accent);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-group:first-of-type .tag-group-title::before {
+      content: "⭐";
+      font-size: 14px;
+    }
+
+    .tag-with-count .count {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .detail-actions {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 390px;
+      width: 100%;
+      background: var(--surface);
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      z-index: 100;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+
+    .detail-action-btn {
+      flex: 1;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .detail-action-btn.primary {
+      background: var(--accent);
+      color: var(--surface);
+    }
+
+    .detail-action-btn.secondary {
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+
+    .detail-action-btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .back-btn {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--fg);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .back-btn:active {
+      background: var(--bg);
+    }
+
+    .map-placeholder {
+      width: 100%;
+      height: 200px;
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px solid var(--border);
+    }
+
+    /* 评价页 */
+    .review-page {
+      display: none;
+      min-height: calc(100vh - 44px - 49px);
+      padding-bottom: 80px;
+      background: var(--bg);
+    }
+
+    .review-page.active {
+      display: block;
+    }
+
+    .review-header {
+      background: var(--surface);
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .review-clinic-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 8px;
+    }
+
+    .review-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .review-layer {
+      background: var(--surface);
+      margin-top: 12px;
+      padding: 20px 16px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-layer-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+
+    .review-layer-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .emotion-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .emotion-btn {
+      flex: 1;
+      padding: 16px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .emotion-btn .emoji {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .emotion-btn .label {
+      font-size: 14px;
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    .emotion-btn.active {
+      background: var(--surface);
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+    }
+
+    .emotion-btn:active {
+      transform: scale(0.98);
+    }
+
+    .reason-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .reason-tag {
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      color: var(--fg);
+    }
+
+    .reason-tag.active {
+      background: var(--accent);
+      color: var(--surface);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .reason-tag:active {
+      transform: scale(0.98);
+    }
+
+    .review-tip {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .review-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+      font-size: 14px;
+      font-family: var(--font-body);
+      line-height: 1.6;
+      resize: vertical;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+
+    .review-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px oklch(64% 0.13 28 / 0.1);
+    }
+
+    .review-textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .review-submit {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 390px;
+      width: 100%;
+      background: var(--surface);
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      z-index: 100;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+
+    .review-submit-btn {
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      outline: none;
+      background: var(--accent);
+      color: var(--surface);
+    }
+
+    .review-submit-btn:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+
+    .review-submit-btn:not(:disabled):active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .layer-hidden {
+      display: none;
+    }
+
+    /* 搜索页 */
+    .search-box {
+      padding: 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      color: var(--fg);
+    }
+
+    .search-input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-history {
+      padding: 16px;
+    }
+
+    .search-section-title {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .search-history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .search-history-item {
+      padding: 8px 16px;
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .search-history-item:active {
+      background: var(--bg);
+    }
+
+    /* 地图页 */
+    .map-container {
+      width: 100%;
+      height: calc(100vh - 44px - 49px - 60px);
+      background: var(--bg);
+      position: relative;
+    }
+
+    .map-placeholder-full {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      gap: 12px;
+      position: relative;
+    }
+
+    .map-placeholder-full .icon {
+      font-size: 48px;
+    }
+
+    /* 地图标记点 */
+    .map-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .map-marker {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.2s;
+      transform: translate(-50%, -50%);
+    }
+
+    .map-marker:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .map-marker:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    .marker-pin {
+      font-size: 32px;
+      filter: drop-shadow(0 2px 4px oklch(22% 0.02 50 / 0.3));
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .marker-label {
+      background: var(--surface);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    .map-clinic-card {
+      position: absolute;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    /* 个人中心 */
+    .profile-header {
+      background: var(--surface);
+      padding: 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      border: 2px solid var(--border);
+    }
+
+    .profile-info {
+      flex: 1;
+    }
+
+    .profile-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+
+    .profile-id {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .profile-menu {
+      padding: 16px;
+    }
+
+    .profile-menu-item {
+      background: var(--surface);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--border);
+    }
+
+    .profile-menu-item:active {
+      background: var(--bg);
+    }
+
+    .profile-menu-item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile-menu-item-icon {
+      font-size: 20px;
+    }
+
+    .profile-menu-item-text {
+      font-size: 15px;
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    .profile-menu-item-arrow {
+      font-size: 14px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="miniapp-container">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <span>📶</span>
+        <span>📡</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="navbar">
+      <div class="back-btn" id="backBtn" style="display: none;">←</div>
+      <div class="navbar-title" id="navbarTitle">附近诊所</div>
+    </div>
+
+    <!-- 首页 -->
+    <div class="page active" id="homePage">
+      <!-- 顶部区域 -->
+      <div class="home-header">
+        <!-- 位置 -->
+        <div class="location-bar">
+          <span class="location-icon">📍</span>
+          <span class="location-text">北京·朝阳区</span>
+        </div>
+
+        <!-- 距离筛选 -->
+        <div class="distance-filter">
+          <div class="distance-btn active">3km</div>
+          <div class="distance-btn">10km</div>
+          <div class="distance-btn">20km</div>
+        </div>
+
+        <!-- 更多筛选 -->
+        <div class="more-filters">
+          <div class="filter-row">
+            <div class="filter-label">营业状态</div>
+            <div class="filter-options">
+              <div class="filter-option active">全部</div>
+              <div class="filter-option">营业中</div>
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-label">服务类型</div>
+            <div class="filter-options">
+              <div class="filter-option active">全部</div>
+              <div class="filter-option">猫专科</div>
+              <div class="filter-option">狗专科</div>
+              <div class="filter-option">异宠</div>
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-label">价格区间</div>
+            <div class="filter-options">
+              <div class="filter-option active">全部</div>
+              <div class="filter-option">经济实惠</div>
+              <div class="filter-option">中等价位</div>
+              <div class="filter-option">高端服务</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab切换 -->
+        <div class="tab-bar">
+          <div class="tab-item active">口碑优先</div>
+          <div class="tab-item">性价比优先</div>
+        </div>
+      </div>
+
+      <!-- 标签筛选 -->
+      <div class="tag-filter">
+        <div class="tag-list">
+          <div class="tag active">全部</div>
+          <div class="tag">不乱开药</div>
+          <div class="tag">不过度检查</div>
+          <div class="tag">价格透明</div>
+          <div class="tag">医生态度好</div>
+          <div class="tag">对宠物耐心</div>
+          <div class="tag">环境干净</div>
+        </div>
+      </div>
+
+      <!-- 诊所列表 -->
+      <div class="clinic-list">
+        <!-- 诊所卡片 1 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">爱宠动物医院</div>
+            </div>
+            <div class="clinic-distance">1.2km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">不乱开药</div>
+            <div class="clinic-tag highlight">价格透明</div>
+            <div class="clinic-tag">医生态度好</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value high">8.9</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value">8.5</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">156人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 2 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">宠颐生动物医院</div>
+            </div>
+            <div class="clinic-distance">2.5km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">不过度检查</div>
+            <div class="clinic-tag highlight">解释清楚病情</div>
+            <div class="clinic-tag">对宠物耐心</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value high">9.1</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value">7.8</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">89人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 3 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">瑞鹏宠物医院</div>
+            </div>
+            <div class="clinic-distance">3.8km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">基础诊疗便宜</div>
+            <div class="clinic-tag">环境干净</div>
+            <div class="clinic-tag">响应快</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value">7.6</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value high">9.2</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">67人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 4 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">芭比堂动物医院</div>
+            </div>
+            <div class="clinic-distance">4.2km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">没有隐性收费</div>
+            <div class="clinic-tag highlight">不强推高价项目</div>
+            <div class="clinic-tag">医生很专业</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value high">8.7</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value high">8.9</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">124人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 5 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">美联众合动物医院</div>
+            </div>
+            <div class="clinic-distance">5.1km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">检查合理收费</div>
+            <div class="clinic-tag highlight">对宠物耐心</div>
+            <div class="clinic-tag">环境干净</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value">8.2</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value">8.1</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">98人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 6 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">安安宠医</div>
+            </div>
+            <div class="clinic-distance">6.3km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">价格透明</div>
+            <div class="clinic-tag highlight">医生态度好</div>
+            <div class="clinic-tag">响应快</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value">7.9</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value high">8.6</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">73人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 7 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">新瑞鹏宠物医疗集团</div>
+            </div>
+            <div class="clinic-distance">7.8km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">不乱开药</div>
+            <div class="clinic-tag highlight">解释清楚病情</div>
+            <div class="clinic-tag">设备齐全</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value high">8.8</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value">7.5</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">142人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 诊所卡片 8 -->
+        <div class="clinic-card">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name">宠福鑫动物医院</div>
+            </div>
+            <div class="clinic-distance">8.5km</div>
+          </div>
+          <div class="clinic-tags">
+            <div class="clinic-tag highlight">基础诊疗便宜</div>
+            <div class="clinic-tag highlight">不过度检查</div>
+            <div class="clinic-tag">医生态度好</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value">8.0</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">性价比</div>
+                <div class="score-value high">8.8</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat">56人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 搜索页 -->
+    <div class="page" id="searchPage">
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <span style="font-size: 18px;">🔍</span>
+          <input type="text" class="search-input" placeholder="搜索诊所名称或地址">
+        </div>
+      </div>
+
+      <div class="search-history">
+        <div class="search-section-title">搜索历史</div>
+        <div class="search-history-list">
+          <div class="search-history-item">爱宠动物医院</div>
+          <div class="search-history-item">宠颐生</div>
+          <div class="search-history-item">瑞鹏</div>
+        </div>
+      </div>
+
+      <div class="search-history">
+        <div class="search-section-title">热门搜索</div>
+        <div class="search-history-list">
+          <div class="search-history-item">24小时急诊</div>
+          <div class="search-history-item">猫专科</div>
+          <div class="search-history-item">绝育手术</div>
+          <div class="search-history-item">疫苗接种</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 地图页 -->
+    <div class="page" id="mapPage">
+      <div class="map-container">
+        <div class="map-placeholder-full">
+          <div class="icon">🗺️</div>
+          <div>地图视图</div>
+          <div style="font-size: 12px;">显示附近诊所位置</div>
+
+          <!-- 诊所标记点 -->
+          <div class="map-markers">
+            <div class="map-marker" data-clinic="爱宠动物医院" style="top: 30%; left: 45%;">
+              <div class="marker-pin">📍</div>
+              <div class="marker-label">爱宠</div>
+            </div>
+            <div class="map-marker" data-clinic="宠颐生动物医院" style="top: 45%; left: 60%;">
+              <div class="marker-pin">📍</div>
+              <div class="marker-label">宠颐生</div>
+            </div>
+            <div class="map-marker" data-clinic="瑞鹏宠物医院" style="top: 55%; left: 35%;">
+              <div class="marker-pin">📍</div>
+              <div class="marker-label">瑞鹏</div>
+            </div>
+            <div class="map-marker" data-clinic="芭比堂动物医院" style="top: 65%; left: 70%;">
+              <div class="marker-pin">📍</div>
+              <div class="marker-label">芭比堂</div>
+            </div>
+            <div class="map-marker" data-clinic="美联众合动物医院" style="top: 40%; left: 25%;">
+              <div class="marker-pin">📍</div>
+              <div class="marker-label">美联</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-clinic-card" id="mapClinicCard" style="display: none;">
+          <div class="clinic-header">
+            <div>
+              <div class="clinic-name" id="mapClinicName">爱宠动物医院</div>
+            </div>
+            <div class="clinic-distance" id="mapClinicDistance">1.2km</div>
+          </div>
+          <div class="clinic-tags" id="mapClinicTags">
+            <div class="clinic-tag highlight">不乱开药</div>
+            <div class="clinic-tag highlight">价格透明</div>
+            <div class="clinic-tag">医生态度好</div>
+          </div>
+          <div class="clinic-footer">
+            <div class="clinic-score">
+              <div class="score-item">
+                <div class="score-label">综合评分</div>
+                <div class="score-value high" id="mapClinicScore">8.9</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+              <div class="clinic-stat" id="mapClinicStat">156人打过标签</div>
+              <div class="clinic-action">查看详情 →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 个人中心 -->
+    <div class="page" id="profilePage">
+      <div class="profile-header">
+        <div class="profile-avatar">🐱</div>
+        <div class="profile-info">
+          <div class="profile-name">宠物主人</div>
+          <div class="profile-id">ID: 123456</div>
+        </div>
+      </div>
+
+      <div class="profile-menu">
+        <div class="profile-menu-item">
+          <div class="profile-menu-item-left">
+            <div class="profile-menu-item-icon">📝</div>
+            <div class="profile-menu-item-text">我的评价</div>
+          </div>
+          <div class="profile-menu-item-arrow">→</div>
+        </div>
+
+        <div class="profile-menu-item">
+          <div class="profile-menu-item-left">
+            <div class="profile-menu-item-icon">⭐</div>
+            <div class="profile-menu-item-text">我的收藏</div>
+          </div>
+          <div class="profile-menu-item-arrow">→</div>
+        </div>
+
+        <div class="profile-menu-item">
+          <div class="profile-menu-item-left">
+            <div class="profile-menu-item-icon">📞</div>
+            <div class="profile-menu-item-text">预约记录</div>
+          </div>
+          <div class="profile-menu-item-arrow">→</div>
+        </div>
+
+        <div class="profile-menu-item">
+          <div class="profile-menu-item-left">
+            <div class="profile-menu-item-icon">⚙️</div>
+            <div class="profile-menu-item-text">设置</div>
+          </div>
+          <div class="profile-menu-item-arrow">→</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 诊所详情页 -->
+    <div class="detail-page" id="detailPage">
+      <!-- 基础信息区 -->
+      <div class="detail-header">
+        <div class="detail-clinic-name">爱宠动物医院</div>
+        <div class="detail-info-row">
+          <span class="icon">📍</span>
+          <span class="text">北京市朝阳区建国路88号SOHO现代城A座1层</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="icon">📏</span>
+          <span class="text">距您 1.2km</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="icon">🕐</span>
+          <span class="text">周一至周日 9:00-21:00</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="icon">📞</span>
+          <span class="text">010-85123456</span>
+        </div>
+        <div class="detail-info-row">
+          <span class="icon">💬</span>
+          <span class="text">微信号：aichong_hospital</span>
+        </div>
+      </div>
+
+      <!-- 标签区 -->
+      <div class="detail-section">
+        <div class="detail-section-title">
+          <span>🏆</span>
+          <span>口碑标签</span>
+        </div>
+
+        <div class="tag-group">
+          <div class="tag-group-title">信任类</div>
+          <div class="tag-group-list">
+            <div class="tag-with-count">
+              <span>不乱开药</span>
+              <span class="count">89人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>不过度检查</span>
+              <span class="count">67人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>解释清楚病情</span>
+              <span class="count">54人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>没有隐性收费</span>
+              <span class="count">43人</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tag-group">
+          <div class="tag-group-title">性价比类</div>
+          <div class="tag-group-list">
+            <div class="tag-with-count">
+              <span>价格透明</span>
+              <span class="count">76人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>基础诊疗便宜</span>
+              <span class="count">52人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>不强推高价项目</span>
+              <span class="count">38人</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tag-group">
+          <div class="tag-group-title">服务体验类</div>
+          <div class="tag-group-list">
+            <div class="tag-with-count">
+              <span>医生态度好</span>
+              <span class="count">81人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>对宠物耐心</span>
+              <span class="count">72人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>环境干净</span>
+              <span class="count">59人</span>
+            </div>
+            <div class="tag-with-count">
+              <span>响应快</span>
+              <span class="count">45人</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 地图位置 -->
+      <div class="detail-section">
+        <div class="detail-section-title">
+          <span>🗺️</span>
+          <span>位置导航</span>
+        </div>
+        <div class="map-placeholder">
+          点击查看地图导航
+        </div>
+      </div>
+
+      <!-- 底部操作按钮 -->
+      <div class="detail-actions">
+        <button class="detail-action-btn secondary">
+          <span>📞</span>
+          <span>拨打电话</span>
+        </button>
+        <button class="detail-action-btn primary">
+          <span>💬</span>
+          <span>复制微信</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 写评价页 -->
+    <div class="review-page" id="reviewPage">
+      <!-- 头部 -->
+      <div class="review-header">
+        <div class="review-clinic-name">爱宠动物医院</div>
+        <div class="review-subtitle">分享您的就诊体验</div>
+      </div>
+
+      <!-- 第一层：情绪判断 -->
+      <div class="review-layer" id="layer1">
+        <div class="review-layer-title">这次就诊体验怎么样？</div>
+        <div class="review-layer-desc">必选1个</div>
+        <div class="emotion-buttons">
+          <div class="emotion-btn" data-emotion="satisfied">
+            <span class="emoji">👍</span>
+            <span class="label">很满意</span>
+          </div>
+          <div class="emotion-btn" data-emotion="normal">
+            <span class="emoji">😐</span>
+            <span class="label">一般</span>
+          </div>
+          <div class="emotion-btn" data-emotion="unsatisfied">
+            <span class="emoji">👎</span>
+            <span class="label">不满意</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第二层：原因选择 -->
+      <div class="review-layer layer-hidden" id="layer2">
+        <div class="review-layer-title" id="layer2Title">选择原因</div>
+        <div class="review-layer-desc">最多选3个，至少选1个</div>
+        <div class="reason-tags" id="reasonTags">
+          <!-- 动态生成 -->
+        </div>
+        <div class="review-tip">已选择 <span id="selectedCount">0</span>/3</div>
+      </div>
+
+      <!-- 第三层：补充标签 -->
+      <div class="review-layer layer-hidden" id="layer3">
+        <div class="review-layer-title">补充标签（可选）</div>
+        <div class="review-layer-desc">最多选2个</div>
+        <div class="reason-tags">
+          <div class="reason-tag" data-tag="extra">猫更友好</div>
+          <div class="reason-tag" data-tag="extra">狗更友好</div>
+          <div class="reason-tag" data-tag="extra">急诊不错</div>
+          <div class="reason-tag" data-tag="extra">有停车位</div>
+          <div class="reason-tag" data-tag="extra">交通方便</div>
+          <div class="reason-tag" data-tag="extra">可以洗澡</div>
+        </div>
+        <div class="review-tip">已选择 <span id="extraCount">0</span>/2</div>
+      </div>
+
+      <!-- 补充说明（文字输入） -->
+      <div class="review-layer layer-hidden" id="layer4">
+        <div class="review-layer-title">补充说明（可选）</div>
+        <div class="review-layer-desc">分享更多细节，帮助其他宠物主人</div>
+        <textarea
+          class="review-textarea"
+          id="reviewText"
+          placeholder="例如：医生很耐心地解释了病情，没有推荐不必要的检查项目，价格也很合理..."
+          maxlength="500"
+        ></textarea>
+        <div class="review-tip">
+          <span id="textCount">0</span>/500字
+        </div>
+      </div>
+
+      <!-- 提交按钮 -->
+      <div class="review-submit">
+        <button class="review-submit-btn" id="submitReview" disabled>提交评价</button>
+      </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="tabbar">
+      <div class="tabbar-item active" data-page="homePage">
+        <div class="icon">🏠</div>
+        <div class="label">首页</div>
+      </div>
+      <div class="tabbar-item" data-page="searchPage">
+        <div class="icon">🔍</div>
+        <div class="label">搜索</div>
+      </div>
+      <div class="tabbar-item" data-page="mapPage">
+        <div class="icon">🗺️</div>
+        <div class="label">地图</div>
+      </div>
+      <div class="tabbar-item" data-page="profilePage">
+        <div class="icon">👤</div>
+        <div class="label">我的</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 屏幕导航 -->
+  <div class="screen-nav">
+    <div class="screen-nav-item active" data-screen="home">首页</div>
+    <div class="screen-nav-item" data-screen="detail">详情</div>
+    <div class="screen-nav-item" data-screen="review">评价</div>
+    <div class="screen-nav-item" data-screen="search">搜索</div>
+    <div class="screen-nav-item" data-screen="map">地图</div>
+    <div class="screen-nav-item" data-screen="profile">我的</div>
+  </div>
+
+  <script>
+    // 底部导航切换
+    const tabbarItems = document.querySelectorAll('.tabbar-item');
+    const pages = document.querySelectorAll('.page');
+    const navbarTitle = document.getElementById('navbarTitle');
+
+    const pageTitles = {
+      homePage: '附近诊所',
+      searchPage: '搜索诊所',
+      mapPage: '地图',
+      profilePage: '我的'
+    };
+
+    tabbarItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const targetPage = item.dataset.page;
+
+        navbarTitle.textContent = pageTitles[targetPage];
+
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(targetPage).classList.add('active');
+
+        tabbarItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // 距离筛选
+    const distanceBtns = document.querySelectorAll('.distance-btn');
+    distanceBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        distanceBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // 更多筛选器交互
+    document.querySelectorAll('.filter-row').forEach(row => {
+      const options = row.querySelectorAll('.filter-option');
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          options.forEach(o => o.classList.remove('active'));
+          option.classList.add('active');
+        });
+      });
+    });
+
+    // Tab切换
+    const tabItems = document.querySelectorAll('.tab-item');
+    tabItems.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabItems.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // 标签筛选
+    const tags = document.querySelectorAll('.tag');
+    tags.forEach(tag => {
+      tag.addEventListener('click', () => {
+        if (tag.textContent === '全部') {
+          tags.forEach(t => t.classList.remove('active'));
+          tag.classList.add('active');
+        } else {
+          document.querySelector('.tag').classList.remove('active');
+          tag.classList.toggle('active');
+        }
+      });
+    });
+
+    // 屏幕导航
+    const screenNavItems = document.querySelectorAll('.screen-nav-item');
+
+    screenNavItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const screen = item.dataset.screen;
+
+        screenNavItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        const pageMap = {
+          home: 'homePage',
+          detail: 'detailPage',
+          review: 'reviewPage',
+          search: 'searchPage',
+          map: 'mapPage',
+          profile: 'profilePage'
+        };
+
+        const targetPage = pageMap[screen];
+        if (targetPage) {
+          // 隐藏所有页面
+          pages.forEach(page => page.classList.remove('active'));
+          document.querySelectorAll('.detail-page').forEach(page => page.classList.remove('active'));
+          document.querySelectorAll('.review-page').forEach(page => page.classList.remove('active'));
+
+          // 显示目标页面
+          const targetElement = document.getElementById(targetPage);
+          if (targetElement) {
+            targetElement.classList.add('active');
+          }
+
+          // 更新导航栏
+          if (targetPage === 'detailPage') {
+            navbarTitle.textContent = '诊所详情';
+            document.getElementById('backBtn').style.display = 'flex';
+            // 隐藏底部导航
+            document.querySelector('.tabbar').style.display = 'none';
+          } else if (targetPage === 'reviewPage') {
+            navbarTitle.textContent = '写评价';
+            document.getElementById('backBtn').style.display = 'flex';
+            // 隐藏底部导航
+            document.querySelector('.tabbar').style.display = 'none';
+          } else {
+            navbarTitle.textContent = pageTitles[targetPage] || '附近诊所';
+            document.getElementById('backBtn').style.display = 'none';
+            // 显示底部导航
+            document.querySelector('.tabbar').style.display = 'flex';
+
+            tabbarItems.forEach(i => i.classList.remove('active'));
+            const tabbarItem = document.querySelector(`[data-page="${targetPage}"]`);
+            if (tabbarItem) {
+              tabbarItem.classList.add('active');
+            }
+          }
+        }
+      });
+    });
+
+    // 返回按钮
+    document.getElementById('backBtn').addEventListener('click', () => {
+      // 返回首页
+      document.querySelectorAll('.detail-page').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.review-page').forEach(page => page.classList.remove('active'));
+      pages.forEach(page => page.classList.remove('active'));
+      document.getElementById('homePage').classList.add('active');
+
+      navbarTitle.textContent = '附近诊所';
+      document.getElementById('backBtn').style.display = 'none';
+      document.querySelector('.tabbar').style.display = 'flex';
+
+      tabbarItems.forEach(i => i.classList.remove('active'));
+      document.querySelector('[data-page="homePage"]').classList.add('active');
+
+      // 更新屏幕导航
+      screenNavItems.forEach(i => i.classList.remove('active'));
+      document.querySelector('[data-screen="home"]').classList.add('active');
+    });
+
+    // 诊所卡片点击跳转详情
+    document.querySelectorAll('.clinic-card').forEach(card => {
+      card.addEventListener('click', () => {
+        // 隐藏所有页面
+        pages.forEach(page => page.classList.remove('active'));
+
+        // 显示详情页
+        document.getElementById('detailPage').classList.add('active');
+
+        // 更新导航栏
+        navbarTitle.textContent = '诊所详情';
+        document.getElementById('backBtn').style.display = 'flex';
+
+        // 隐藏底部导航
+        document.querySelector('.tabbar').style.display = 'none';
+
+        // 更新屏幕导航
+        screenNavItems.forEach(i => i.classList.remove('active'));
+        document.querySelector('[data-screen="detail"]').classList.add('active');
+      });
+    });
+
+    // 评价页逻辑
+    const reasonTagsData = {
+      satisfied: [
+        '医生很专业',
+        '价格合理',
+        '解释清楚',
+        '不乱推荐检查',
+        '对宠物很耐心',
+        '环境干净'
+      ],
+      normal: [
+        '价格略高',
+        '等待时间长',
+        '沟通一般',
+        '检查项目多',
+        '环境一般'
+      ],
+      unsatisfied: [
+        '乱收费',
+        '过度检查',
+        '不专业',
+        '体验差',
+        '态度不好',
+        '强推高价项目'
+      ]
+    };
+
+    let selectedEmotion = null;
+    let selectedReasons = [];
+    let selectedExtras = [];
+
+    // 第一层：情绪选择
+    document.querySelectorAll('.emotion-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const emotion = btn.dataset.emotion;
+
+        // 更新选中状态
+        document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        selectedEmotion = emotion;
+        selectedReasons = [];
+
+        // 显示第二层
+        document.getElementById('layer2').classList.remove('layer-hidden');
+
+        // 生成对应的原因标签
+        const reasonTags = document.getElementById('reasonTags');
+        reasonTags.innerHTML = '';
+
+        reasonTagsData[emotion].forEach(reason => {
+          const tag = document.createElement('div');
+          tag.className = 'reason-tag';
+          tag.textContent = reason;
+          tag.dataset.reason = reason;
+          reasonTags.appendChild(tag);
+        });
+
+        // 绑定第二层标签点击事件
+        bindReasonTags();
+
+        // 显示第三层
+        document.getElementById('layer3').classList.remove('layer-hidden');
+
+        // 显示第四层（文字输入）
+        document.getElementById('layer4').classList.remove('layer-hidden');
+
+        // 重置第三层选择
+        selectedExtras = [];
+        document.querySelectorAll('[data-tag="extra"]').forEach(t => t.classList.remove('active'));
+        document.getElementById('extraCount').textContent = '0';
+
+        // 更新提交按钮状态
+        updateSubmitButton();
+      });
+    });
+
+    // 第二层：原因标签选择
+    function bindReasonTags() {
+      document.querySelectorAll('[data-reason]').forEach(tag => {
+        tag.addEventListener('click', () => {
+          const reason = tag.dataset.reason;
+
+          if (tag.classList.contains('active')) {
+            // 取消选择
+            tag.classList.remove('active');
+            selectedReasons = selectedReasons.filter(r => r !== reason);
+          } else {
+            // 选择（最多3个）
+            if (selectedReasons.length < 3) {
+              tag.classList.add('active');
+              selectedReasons.push(reason);
+            }
+          }
+
+          document.getElementById('selectedCount').textContent = selectedReasons.length;
+          updateSubmitButton();
+        });
+      });
+    }
+
+    // 第三层：补充标签选择
+    document.querySelectorAll('[data-tag="extra"]').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const tagText = tag.textContent;
+
+        if (tag.classList.contains('active')) {
+          // 取消选择
+          tag.classList.remove('active');
+          selectedExtras = selectedExtras.filter(t => t !== tagText);
+        } else {
+          // 选择（最多2个）
+          if (selectedExtras.length < 2) {
+            tag.classList.add('active');
+            selectedExtras.push(tagText);
+          }
+        }
+
+        document.getElementById('extraCount').textContent = selectedExtras.length;
+      });
+    });
+
+    // 文字输入框字数统计
+    const reviewTextarea = document.getElementById('reviewText');
+    const textCountSpan = document.getElementById('textCount');
+
+    reviewTextarea.addEventListener('input', () => {
+      const length = reviewTextarea.value.length;
+      textCountSpan.textContent = length;
+    });
+
+    // 更新提交按钮状态
+    function updateSubmitButton() {
+      const submitBtn = document.getElementById('submitReview');
+      if (selectedEmotion && selectedReasons.length >= 1) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+
+    // 提交评价
+    document.getElementById('submitReview').addEventListener('click', () => {
+      const reviewText = reviewTextarea.value.trim();
+      const textPart = reviewText ? `\n文字说明：${reviewText}` : '';
+
+      alert(`评价已提交！\n\n情绪：${selectedEmotion}\n原因：${selectedReasons.join(', ')}\n补充：${selectedExtras.join(', ') || '无'}${textPart}`);
+
+      // 返回首页
+      document.getElementById('backBtn').click();
+    });
+
+    // 地图标记点点击交互
+    const clinicData = {
+      '爱宠动物医院': { distance: '1.2km', score: '8.9', tags: ['不乱开药', '价格透明', '医生态度好'], count: '156人' },
+      '宠颐生动物医院': { distance: '2.5km', score: '9.1', tags: ['不过度检查', '解释清楚病情', '对宠物耐心'], count: '89人' },
+      '瑞鹏宠物医院': { distance: '3.8km', score: '7.6', tags: ['基础诊疗便宜', '环境干净', '响应快'], count: '67人' },
+      '芭比堂动物医院': { distance: '4.2km', score: '8.7', tags: ['没有隐性收费', '不强推高价项目', '医生很专业'], count: '124人' },
+      '美联众合动物医院': { distance: '5.1km', score: '8.2', tags: ['检查合理收费', '对宠物耐心', '环境干净'], count: '98人' }
+    };
+
+    document.querySelectorAll('.map-marker').forEach(marker => {
+      marker.addEventListener('click', () => {
+        const clinicName = marker.dataset.clinic;
+        const data = clinicData[clinicName];
+
+        if (data) {
+          // 更新卡片内容
+          document.getElementById('mapClinicName').textContent = clinicName;
+          document.getElementById('mapClinicDistance').textContent = data.distance;
+          document.getElementById('mapClinicScore').textContent = data.score;
+          document.getElementById('mapClinicStat').textContent = data.count + '打过标签';
+
+          // 更新标签
+          const tagsContainer = document.getElementById('mapClinicTags');
+          tagsContainer.innerHTML = '';
+          data.tags.forEach((tag, index) => {
+            const tagEl = document.createElement('div');
+            tagEl.className = index < 2 ? 'clinic-tag highlight' : 'clinic-tag';
+            tagEl.textContent = tag;
+            tagsContainer.appendChild(tagEl);
+          });
+
+          // 显示卡片
+          document.getElementById('mapClinicCard').style.display = 'block';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx;
+}
+
+.profile-card__avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: #d86b4a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.profile-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.profile-card__name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.menu-list {
+  margin-top: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.auth-actions {
+  margin-top: 24rpx;
+  padding: 24rpx;
+}
+
+.auth-button {
+  border-radius: 999rpx;
+  border: 1rpx solid #e2d4c8;
+  background: #fffdfb;
+  color: #5f4d42;
+  font-size: 28rpx;
+}
+
+.auth-button--primary {
+  background: #d86b4a;
+  border-color: #d86b4a;
+  color: #ffffff;
+}
+
+.menu-item {
+  padding: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-item__arrow {
+  color: #b08d7a;
+  font-size: 30rpx;
+}

@@ -1,0 +1,281 @@
+.review-page {
+  padding-bottom: 48rpx;
+}
+
+.review-hero {
+  padding: 30rpx;
+  background:
+    radial-gradient(circle at top right, rgba(216, 107, 74, 0.16), transparent 38%),
+    linear-gradient(160deg, #fff9f5 0%, #fffdfb 100%);
+}
+
+.review-hero__eyebrow {
+  color: #d86b4a;
+  font-size: 22rpx;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.review-hero__title {
+  margin-top: 14rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.review-hero__meta {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.review-hero__badge {
+  align-self: flex-start;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: #fff1ea;
+  color: #d86b4a;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.review-hero__hint {
+  line-height: 1.6;
+}
+
+.stepper {
+  margin-top: 28rpx;
+  display: flex;
+  align-items: center;
+}
+
+.stepper__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  color: #b6a398;
+  font-size: 22rpx;
+}
+
+.stepper__item--active {
+  color: #2f2925;
+}
+
+.stepper__index {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3e4da;
+  color: #9b705d;
+  font-weight: 700;
+}
+
+.stepper__item--active .stepper__index {
+  background: #d86b4a;
+  color: #ffffff;
+}
+
+.stepper__line {
+  flex: 1;
+  height: 2rpx;
+  margin: 0 12rpx;
+  background: #ead8cd;
+}
+
+.stepper__line--active {
+  background: #d86b4a;
+}
+
+.section-subtitle {
+  margin-top: -6rpx;
+  margin-bottom: 18rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.emotion-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18rpx;
+}
+
+.emotion-card {
+  padding: 26rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.emotion-card--active {
+  border-color: #d86b4a;
+  background: #fff5f0;
+  box-shadow: 0 14rpx 30rpx rgba(216, 107, 74, 0.12);
+}
+
+.emotion-card__icon {
+  font-size: 38rpx;
+}
+
+.emotion-card__label {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.emotion-card__description {
+  color: #7a6c63;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.state-card {
+  margin-top: 28rpx;
+  padding: 40rpx 28rpx;
+  text-align: center;
+  color: #7a6c63;
+}
+
+.state-card--compact {
+  padding: 28rpx 24rpx;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  align-items: flex-start;
+}
+
+.section-heading--compact {
+  margin-bottom: 16rpx;
+}
+
+.section-action {
+  flex-shrink: 0;
+  color: #d86b4a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.reason-grid {
+  margin-top: 22rpx;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.reason-card {
+  min-height: 168rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.reason-card--active {
+  border-color: #d86b4a;
+  background: #fff5f0;
+  box-shadow: 0 12rpx 26rpx rgba(216, 107, 74, 0.1);
+}
+
+.reason-card__name {
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.reason-card__meta {
+  color: #7a6c63;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.review-button {
+  width: 100%;
+  margin-top: 28rpx;
+}
+
+.summary-card {
+  margin-top: 22rpx;
+  padding: 24rpx;
+}
+
+.summary-card__label {
+  font-size: 24rpx;
+  color: #7a6c63;
+}
+
+.summary-card__tags {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.summary-card__pill {
+  background: #fff4ed;
+}
+
+.text-card {
+  margin-top: 22rpx;
+  padding: 24rpx;
+}
+
+.text-card__title {
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.text-card__hint {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.text-card__counter {
+  flex-shrink: 0;
+  color: #b08d7a;
+  font-size: 22rpx;
+}
+
+.text-card__textarea {
+  width: 100%;
+  min-height: 180rpx;
+  padding: 22rpx;
+  box-sizing: border-box;
+  border-radius: 20rpx;
+  background: #faf4ef;
+  color: #2f2925;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.extra-grid {
+  margin-top: 22rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.extra-pill {
+  padding: 14rpx 26rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #e8d7cc;
+  background: #fffdfb;
+  color: #5f4d42;
+  font-size: 25rpx;
+}
+
+.extra-pill--active {
+  border-color: #d86b4a;
+  background: #fff1ea;
+  color: #d86b4a;
+  font-weight: 600;
+}

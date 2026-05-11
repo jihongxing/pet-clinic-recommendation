@@ -1,0 +1,141 @@
+<view class="page-shell">
+  <view class="hero card">
+    <view class="hero__top">
+      <text class="hero__title">{{cityLabel}}</text>
+      <text class="muted">{{locationHint}}</text>
+    </view>
+    <view class="hero__actions">
+      <view
+        class="hero__tab {{sortType === 'reputation' ? 'hero__tab--active' : ''}}"
+        data-type="reputation"
+        bindtap="onSortChange"
+      >
+        口碑优先
+      </view>
+      <view
+        class="hero__tab {{sortType === 'price' ? 'hero__tab--active' : ''}}"
+        data-type="price"
+        bindtap="onSortChange"
+      >
+        性价比优先
+      </view>
+    </view>
+    <view class="hero__radius">
+      <view
+        wx:for="{{radiusOptions}}"
+        wx:key="value"
+        class="radius-pill {{radius === item.value ? 'radius-pill--active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onRadiusChange"
+      >
+        {{item.label}}
+      </view>
+    </view>
+    <view class="hero__footer">
+      <text class="muted">共找到 {{total}} 家可联调诊所</text>
+      <text class="hero__refresh" bindtap="refreshHome">刷新位置</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">快捷入口</view>
+    <view class="quick-actions">
+      <view
+        wx:for="{{quickActions}}"
+        wx:key="page"
+        class="quick-action card"
+        data-page="{{item.page}}"
+        bindtap="goToPage"
+      >
+        {{item.title}}
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">标签筛选</view>
+    <scroll-view class="tag-scroll" scroll-x enable-flex>
+      <view class="tag-scroll__inner">
+        <view
+          wx:for="{{filterTags}}"
+          wx:key="id"
+          class="filter-pill {{selectedTagId === item.id ? 'filter-pill--active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onTagChange"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">附近诊所</view>
+
+    <view wx:if="{{loading && clinics.length === 0}}" class="state-card card">
+      正在加载附近诊所...
+    </view>
+
+    <view wx:elif="{{!loading && clinics.length === 0}}" class="state-card card">
+      <text class="state-card__title">附近还没有匹配结果</text>
+      <text class="muted">可以切换排序、半径或标签后再试一次</text>
+    </view>
+
+    <block wx:else>
+      <view
+        wx:for="{{clinics}}"
+        wx:key="id"
+        class="clinic-card card"
+        data-id="{{item.id}}"
+        bindtap="goToDetail"
+      >
+        <view class="clinic-card__header">
+          <view class="clinic-card__title">
+            <text class="clinic-card__name">{{item.name}}</text>
+            <text wx:if="{{item.isClaimed}}" class="claimed-badge">已认领</text>
+          </view>
+          <text class="muted">{{item.distanceText}}</text>
+        </view>
+        <text class="clinic-card__address muted">{{item.address}}</text>
+        <view class="clinic-card__tags">
+          <text
+            wx:for="{{item.topTags}}"
+            wx:key="id"
+            wx:for-item="tag"
+            class="pill clinic-pill {{tag.isActive ? 'clinic-pill--active' : ''}}"
+          >
+            {{tag.name}} {{tag.count}}
+          </text>
+        </view>
+        <view class="clinic-card__metrics">
+          <view class="metric-item">
+            <text class="metric-item__label">口碑</text>
+            <text class="clinic-card__score">{{item.reputationScoreText}}</text>
+          </view>
+          <view class="metric-item">
+            <text class="metric-item__label">性价比</text>
+            <text class="metric-item__value">{{item.priceScoreText}}</text>
+          </view>
+          <view class="metric-item">
+            <text class="metric-item__label">可信度</text>
+            <text class="metric-item__value">{{item.confidenceText}}</text>
+          </view>
+        </view>
+        <view class="clinic-card__footer">
+          <text class="muted">{{item.totalUsers}} 人打过标签 · {{item.totalTagCount}} 条标签</text>
+          <text class="clinic-card__detail">查看详情</text>
+        </view>
+      </view>
+
+      <view wx:if="{{clinics.length < total}}" class="load-more">
+        <button
+          class="load-more__button"
+          loading="{{loadingMore}}"
+          bindtap="loadMore"
+        >
+          {{loadingMore ? '加载中...' : '加载更多'}}
+        </button>
+      </view>
+    </block>
+  </view>
+</view>
