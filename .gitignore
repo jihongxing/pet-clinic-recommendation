@@ -37,6 +37,9 @@ pnpm-debug.log*
 .cache/
 .tmp/
 tmp/
+backups/
+*.dump
+*.backup
 
 # Mini program local-only files
 frontend/project.private.config.json

@@ -112,7 +112,7 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml down
 
 这次完成的是 `T6-05` 和 `T6-08` 的基础设施部分，staging 现在已经能同时追踪性能和错误日志。
 
-下面几项仍然属于后续任务：
+补充收尾资料见：
 
-- `T6-07` 数据库备份
-- `T6-11` 上线回滚方案
+- [数据库备份与恢复说明](./数据库备份与恢复说明.md)
+- [上线回滚方案](./上线回滚方案.md)

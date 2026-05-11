@@ -2,7 +2,7 @@
   "name": "pet-clinic-recommendation-backend",
   "version": "1.2.0",
   "description": "宠物诊所口碑推荐小程序 - 后端API",
-  "author": "Your Name",
+  "author": "jihongxing",
   "private": true,
   "license": "SEE LICENSE IN ../LICENSE",
   "scripts": {
