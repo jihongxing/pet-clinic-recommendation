@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "宠物诊所推荐小程序前端",
+  "license": "SEE LICENSE IN ../LICENSE",
   "scripts": {
     "lint": "eslint \"app.js\" \"config/**/*.js\" \"pages/**/*.js\" \"utils/**/*.js\"",
     "format": "prettier --write \"app.js\" \"app.json\" \"app.wxss\" \"project.config.json\" \"sitemap.json\" \"config/**/*.js\" \"pages/**/*.{js,json,wxml,wxss}\" \"utils/**/*.js\""

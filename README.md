@@ -3,7 +3,7 @@
 > 一个基于四层标签体系和防刷排序算法的结构化真实医疗反馈系统
 
 [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/yourname/pet-clinic-recommendation)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Learning%20Only-orange.svg)](LICENSE)
 
 ---
 
@@ -18,6 +18,15 @@
 - 📊 **智能排序算法**：Trust(45%) + Value(25%) + Experience(15%) + Social(15%) - Risk
 - ⚡ **3秒完成选择**：三层情绪分流UI，降低用户决策成本
 - 🔒 **去商业化排序**：付费不影响排名，信任优先
+
+## ⚠️ 许可证说明
+
+本仓库代码仅供学习、研究和非商业技术评估使用。
+
+- 允许：个人学习、课堂/研究用途、非商业性质的本地修改与实验
+- 禁止：商用、对外提供服务、生产部署、作为商业产品或商业项目的一部分使用
+
+这不是 OSI 意义上的开源许可证。具体条款见 [LICENSE](LICENSE)。
 
 ---
 
@@ -481,7 +490,9 @@ chore: 构建/工具
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+本项目采用“仅限学习、禁止商用”的自定义许可证。
+
+查看 [LICENSE](LICENSE) 获取完整条款。
 
 ---
 
