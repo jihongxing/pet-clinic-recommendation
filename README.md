@@ -2,14 +2,23 @@
 
 > 一个基于四层标签体系和防刷排序算法的结构化真实医疗反馈系统
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/yourname/pet-clinic-recommendation)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/jihongxing/pet-clinic-recommendation)
 [![License](https://img.shields.io/badge/license-Learning%20Only-orange.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-MVP%20Foundation-success.svg)](https://github.com/jihongxing/pet-clinic-recommendation)
 
 ---
 
 ## 📖 项目简介
 
 这是一个帮助宠物主人**快速找到附近"口碑好/性价比高"宠物诊所**的轻量级微信小程序。
+
+仓库当前包含：
+
+- 微信小程序前端骨架与主链路页面
+- NestJS 后端 API、TypeORM migrations、种子数据
+- Redis 缓存、JWT 鉴权、Swagger、统一响应与异常处理
+- Prometheus + Grafana + Loki + Promtail 可观测性配置
+- staging 部署、HTTPS 域名接入和提审前说明文档
 
 ### 核心特点
 
@@ -18,6 +27,30 @@
 - 📊 **智能排序算法**：Trust(45%) + Value(25%) + Experience(15%) + Social(15%) - Risk
 - ⚡ **3秒完成选择**：三层情绪分流UI，降低用户决策成本
 - 🔒 **去商业化排序**：付费不影响排名，信任优先
+
+## 🧭 快速导航
+
+- [本地启动](#-本地启动)
+- [Staging 部署](#staging-部署)
+- [域名与 HTTPS](docs/域名与HTTPS配置说明.md)
+- [生产日志与监控](docs/生产日志与监控说明.md)
+- [小程序提审前说明](docs/小程序提审前说明.md)
+- [GitHub 仓库发布说明](docs/GitHub仓库发布说明.md)
+
+## 📌 当前状态
+
+当前仓库已经完成了 MVP 的核心后端能力和主链路前端页面，适合作为：
+
+- 产品原型和技术方案的落地仓库
+- 微信小程序 + NestJS + PostgreSQL + Redis 的组合示例
+- 诊所评价/聚合/排序类产品的参考实现
+
+当前仍建议视为 **MVP / staging-ready** 状态，距离真实上线还差这几项收尾：
+
+- 小程序真机联调与提审素材整理
+- 数据库自动备份
+- 生产回滚方案
+- 真实域名、证书和微信后台配置
 
 ## ⚠️ 许可证说明
 
@@ -47,7 +80,7 @@
 ### 1. 克隆项目
 
 ```powershell
-git clone https://github.com/yourname/pet-clinic-recommendation.git
+git clone https://github.com/jihongxing/pet-clinic-recommendation.git
 cd pet-clinic-recommendation
 ```
 
@@ -476,15 +509,21 @@ chore: 构建/工具
 
 ## 🤝 贡献指南
 
-欢迎提交Issue和Pull Request！
+欢迎提交 Issue 和 Pull Request。
 
-### 贡献步骤
+建议优先提交：
 
-1. Fork本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交Pull Request
+- Bug 修复
+- 文档完善
+- 非商业学习场景下的工程优化
+- 测试补充和部署脚手架改进
+
+提交前建议至少执行：
+
+```bash
+cd backend && npm run build
+cd ../frontend && npm run lint
+```
 
 ---
 
@@ -496,33 +535,18 @@ chore: 构建/工具
 
 ---
 
-## 👥 团队
+## 🗂️ 发布资料
 
-- **产品经理**: [@yourname](https://github.com/yourname)
-- **后端开发**: [@yourname](https://github.com/yourname)
-- **前端开发**: [@yourname](https://github.com/yourname)
-
----
-
-## 📞 联系我们
-
-- 邮箱: your-email@example.com
-- 微信: your-wechat-id
-- 官网: https://yourwebsite.com
+- [GitHub仓库发布说明](docs/GitHub仓库发布说明.md)
+- [小程序提审前说明](docs/小程序提审前说明.md)
+- [域名与HTTPS配置说明](docs/域名与HTTPS配置说明.md)
+- [生产日志与监控说明](docs/生产日志与监控说明.md)
 
 ---
 
 ## 🙏 致谢
 
-感谢所有为这个项目做出贡献的人！
-
----
-
-## ⭐ Star History
-
-如果这个项目对你有帮助，请给我们一个Star！
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourname/pet-clinic-recommendation&type=Date)](https://star-history.com/#yourname/pet-clinic-recommendation&Date)
+感谢所有为这个项目提供思路、反馈和实现参考的人。
 
 ---
 
