@@ -56,6 +56,24 @@ function buildClinicViewModel(clinic) {
   };
 }
 
+function buildRecommendClinicUrl(params = {}) {
+  const query = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+    .join('&');
+
+  return `/pages/recommend-clinic/recommend-clinic${query ? `?${query}` : ''}`;
+}
+
+function buildClaimClinicUrl(params = {}) {
+  const query = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+    .join('&');
+
+  return `/pages/claim-clinic/claim-clinic${query ? `?${query}` : ''}`;
+}
+
 Page({
   data: {
     clinic: null,
@@ -243,6 +261,42 @@ Page({
 
     wx.navigateTo({
       url: `/pages/tag-selection/tag-selection?clinicId=${this.data.clinicId}&clinicName=${clinicName}&source=normal`,
+    });
+  },
+
+  openRecommendClinic() {
+    if (!this.data.clinic) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: buildRecommendClinicUrl({
+        source: 'clinic-detail',
+        clinicId: this.data.clinicId,
+        name: this.data.clinic.name,
+        address: this.data.clinic.address,
+        city: this.data.clinic.city,
+        district: this.data.clinic.district,
+        phone: this.data.clinic.phone,
+        businessHours: this.data.clinic.businessHours,
+      }),
+    });
+  },
+
+  openClaimClinic() {
+    if (!this.data.clinic || this.data.clinic.isClaimed) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: buildClaimClinicUrl({
+        clinicId: this.data.clinicId,
+        name: this.data.clinic.name,
+        address: this.data.clinic.address,
+        city: this.data.clinic.city,
+        district: this.data.clinic.district,
+        phone: this.data.clinic.phone,
+      }),
     });
   },
 });

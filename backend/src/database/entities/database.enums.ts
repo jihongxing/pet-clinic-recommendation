@@ -62,6 +62,27 @@ export enum ClaimStatus {
   Rejected = 'rejected',
 }
 
+export enum ClinicSubmissionType {
+  New = 'new',
+  Supplement = 'supplement',
+  Correction = 'correction',
+}
+
+export enum ClinicSubmissionStatus {
+  PendingReview = 'pending_review',
+  NeedInfo = 'need_info',
+  ApprovedNew = 'approved_new',
+  Merged = 'merged',
+  Rejected = 'rejected',
+}
+
+export enum ClinicSubmissionReviewAction {
+  ApprovedNew = 'approved_new',
+  Merged = 'merged',
+  NeedInfo = 'need_info',
+  Rejected = 'rejected',
+}
+
 export enum AbnormalStatus {
   Pending = 'pending',
   Confirmed = 'confirmed',

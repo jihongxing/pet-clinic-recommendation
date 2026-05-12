@@ -5,23 +5,30 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
 
 import { RESPONSE_CODE } from '../../common/constants/response-code.constants';
 import {
   ClinicAccountEntity,
+  ClinicClaimRequestEntity,
   ClinicEntity,
+  ClaimStatus,
   ClinicTagResponseEntity,
   ClinicTagStatus,
   ResponseStatus,
   TagEntity,
 } from '../../database/entities';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { AuthActorType } from '../auth/interfaces/jwt-payload.interface';
 import { RedisService } from '../redis/redis.service';
+import { CreateClinicClaimRequestDto } from './dto/create-clinic-claim-request.dto';
+import { GetAdminClaimRequestsQueryDto } from './dto/get-admin-claim-requests-query.dto';
 import { GetClinicDetailQueryDto } from './dto/get-clinic-detail-query.dto';
 import { GetNearbyClinicsQueryDto } from './dto/get-nearby-clinics-query.dto';
+import { ReviewClinicClaimRequestDto } from './dto/review-clinic-claim-request.dto';
 import { SearchClinicsQueryDto } from './dto/search-clinics-query.dto';
 import { SubmitClinicResponseDto } from './dto/submit-clinic-response.dto';
+import { hash } from 'bcryptjs';
 
 interface NearbyClinicRawRow {
   id: number | string;
@@ -195,6 +202,66 @@ export interface SubmitClinicResponseResult {
   createdAt: Date;
 }
 
+export interface CreateClinicClaimRequestResult {
+  id: number;
+  status: ClaimStatus;
+}
+
+export interface ClinicClaimRequestListItem {
+  id: number;
+  clinicId: number;
+  clinicName: string;
+  clinicAddress: string;
+  clinicCity: string;
+  clinicDistrict: string | null;
+  applicantName: string;
+  applicantPhone: string;
+  proofMaterial: string | null;
+  status: ClaimStatus;
+  reviewNote: string | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface GetMyClinicClaimRequestsResult {
+  list: ClinicClaimRequestListItem[];
+  total: number;
+}
+
+export interface ClinicClaimRequestDetailResult extends ClinicClaimRequestListItem {
+  submitterUserId: number | null;
+}
+
+export interface AdminClinicClaimRequestListItem
+  extends ClinicClaimRequestListItem {
+  submitter: {
+    userId: number | null;
+    nickname: string | null;
+    city: string | null;
+  } | null;
+  reviewedBy: number | null;
+}
+
+export interface GetAdminClaimRequestsResult {
+  list: AdminClinicClaimRequestListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ReviewClinicClaimRequestResult {
+  id: number;
+  status: ClaimStatus;
+  reviewedAt: Date;
+  reviewNote: string | null;
+  reviewedBy: number;
+  clinicAccount: {
+    clinicAccountId: number;
+    username: string;
+    temporaryPassword: string | null;
+  } | null;
+}
+
 export interface ClinicResponseItem {
   id: number;
   tagId: number;
@@ -218,6 +285,8 @@ export class ClinicsService {
     private readonly clinicRepository: Repository<ClinicEntity>,
     @InjectRepository(ClinicAccountEntity)
     private readonly clinicAccountRepository: Repository<ClinicAccountEntity>,
+    @InjectRepository(ClinicClaimRequestEntity)
+    private readonly clinicClaimRequestRepository: Repository<ClinicClaimRequestEntity>,
     @InjectRepository(ClinicTagResponseEntity)
     private readonly clinicTagResponseRepository: Repository<ClinicTagResponseEntity>,
     @InjectRepository(TagEntity)
@@ -337,6 +406,294 @@ export class ClinicsService {
       status: savedResponse.status,
       createdAt: savedResponse.createdAt,
     };
+  }
+
+  async createClinicClaimRequest(
+    clinicId: number,
+    submitterUserId: string,
+    payload: CreateClinicClaimRequestDto,
+  ): Promise<CreateClinicClaimRequestResult> {
+    const clinic = await this.clinicRepository.findOne({
+      where: {
+        id: clinicId,
+        status: 1,
+      },
+    });
+
+    if (!clinic) {
+      throw new NotFoundException({
+        code: RESPONSE_CODE.CLINIC_NOT_FOUND,
+        message: '诊所不存在',
+      });
+    }
+
+    if (clinic.isClaimed === 1) {
+      throw new BadRequestException({
+        code: RESPONSE_CODE.PARAM_INVALID,
+        message: '该诊所已被认领，无需重复申请',
+      });
+    }
+
+    const existingPendingRequest =
+      await this.clinicClaimRequestRepository.findOne({
+        where: {
+          clinicId,
+          status: ClaimStatus.Pending,
+        },
+      });
+
+    if (existingPendingRequest) {
+      throw new BadRequestException({
+        code: RESPONSE_CODE.PARAM_INVALID,
+        message: '该诊所已有认领申请正在审核中',
+      });
+    }
+
+    const claimRequest = this.clinicClaimRequestRepository.create({
+      clinicId,
+      submitterUserId,
+      applicantName: payload.applicantName.trim(),
+      applicantPhone: payload.applicantPhone.trim(),
+      proofMaterial: this.toNullableString(payload.proofMaterial),
+      status: ClaimStatus.Pending,
+    });
+    const savedClaimRequest =
+      await this.clinicClaimRequestRepository.save(claimRequest);
+
+    return {
+      id: Number(savedClaimRequest.id),
+      status: savedClaimRequest.status,
+    };
+  }
+
+  async getMyClinicClaimRequests(
+    submitterUserId: string,
+  ): Promise<GetMyClinicClaimRequestsResult> {
+    const claimRequests = await this.clinicClaimRequestRepository.find({
+      where: {
+        submitterUserId,
+      },
+      relations: {
+        clinic: true,
+      },
+      order: {
+        createdAt: 'DESC',
+        id: 'DESC',
+      },
+    });
+
+    return {
+      list: claimRequests.map((claimRequest) =>
+        this.toClinicClaimRequestListItem(claimRequest),
+      ),
+      total: claimRequests.length,
+    };
+  }
+
+  async getAdminClaimRequests(
+    query: GetAdminClaimRequestsQueryDto,
+  ): Promise<GetAdminClaimRequestsResult> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const where: FindOptionsWhere<ClinicClaimRequestEntity> = {};
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [claimRequests, total] =
+      await this.clinicClaimRequestRepository.findAndCount({
+        where,
+        relations: {
+          clinic: true,
+          submitterUser: true,
+        },
+        order: {
+          createdAt: 'DESC',
+          id: 'DESC',
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+    return {
+      list: claimRequests.map((claimRequest) => ({
+        ...this.toClinicClaimRequestListItem(claimRequest),
+        submitter: claimRequest.submitterUser
+          ? {
+              userId: Number(claimRequest.submitterUser.id),
+              nickname: claimRequest.submitterUser.nickname,
+              city: claimRequest.submitterUser.city,
+            }
+          : null,
+        reviewedBy: claimRequest.reviewedBy
+          ? Number(claimRequest.reviewedBy)
+          : null,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async getClinicClaimRequestDetail(
+    id: number,
+    actor: AuthenticatedUser,
+  ): Promise<ClinicClaimRequestDetailResult> {
+    const claimRequest = await this.clinicClaimRequestRepository.findOne({
+      where: {
+        id: String(id),
+      },
+      relations: {
+        clinic: true,
+      },
+    });
+
+    if (!claimRequest) {
+      throw new NotFoundException({
+        code: RESPONSE_CODE.RESOURCE_NOT_FOUND,
+        message: '认领申请不存在',
+      });
+    }
+
+    if (
+      actor.actorType === AuthActorType.User &&
+      claimRequest.submitterUserId !== actor.userId
+    ) {
+      throw new ForbiddenException({
+        code: RESPONSE_CODE.TOKEN_INVALID,
+        message: '无权查看该认领申请',
+      });
+    }
+
+    if (
+      actor.actorType !== AuthActorType.User &&
+      actor.actorType !== AuthActorType.Admin
+    ) {
+      throw new ForbiddenException({
+        code: RESPONSE_CODE.TOKEN_INVALID,
+        message: '当前令牌不支持查看认领申请',
+      });
+    }
+
+    return {
+      ...this.toClinicClaimRequestListItem(claimRequest),
+      submitterUserId: claimRequest.submitterUserId
+        ? Number(claimRequest.submitterUserId)
+        : null,
+    };
+  }
+
+  async reviewClinicClaimRequest(
+    adminUserId: string,
+    id: number,
+    payload: ReviewClinicClaimRequestDto,
+  ): Promise<ReviewClinicClaimRequestResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const claimRequestRepository =
+        manager.getRepository(ClinicClaimRequestEntity);
+      const clinicRepository = manager.getRepository(ClinicEntity);
+      const clinicAccountRepository = manager.getRepository(ClinicAccountEntity);
+
+      const claimRequest = await claimRequestRepository.findOne({
+        where: {
+          id: String(id),
+        },
+      });
+
+      if (!claimRequest) {
+        throw new NotFoundException({
+          code: RESPONSE_CODE.RESOURCE_NOT_FOUND,
+          message: '认领申请不存在',
+        });
+      }
+
+      if (claimRequest.status !== ClaimStatus.Pending) {
+        throw new BadRequestException({
+          code: RESPONSE_CODE.PARAM_INVALID,
+          message: '当前认领申请状态不允许继续审核',
+        });
+      }
+
+      let clinicAccountMeta: ReviewClinicClaimRequestResult['clinicAccount'] = null;
+      const adminNote = this.toNullableString(payload.note);
+
+      if (payload.action === ClaimStatus.Approved) {
+        const clinic = await clinicRepository.findOne({
+          where: {
+            id: claimRequest.clinicId,
+            status: 1,
+          },
+        });
+
+        if (!clinic) {
+          throw new NotFoundException({
+            code: RESPONSE_CODE.CLINIC_NOT_FOUND,
+            message: '诊所不存在',
+          });
+        }
+
+        const clinicAccount =
+          await clinicAccountRepository.findOne({
+            where: {
+              clinicId: claimRequest.clinicId,
+            },
+          });
+
+        if (clinicAccount) {
+          clinicAccount.status = 1;
+          const savedClinicAccount =
+            await clinicAccountRepository.save(clinicAccount);
+          clinicAccountMeta = {
+            clinicAccountId: Number(savedClinicAccount.id),
+            username: savedClinicAccount.username,
+            temporaryPassword: null,
+          };
+        } else {
+          const username = `clinic_admin_${claimRequest.clinicId}`;
+          const temporaryPassword = this.buildClinicTemporaryPassword(
+            claimRequest.clinicId,
+          );
+          const passwordHash = await hash(temporaryPassword, 10);
+          const createdClinicAccount = clinicAccountRepository.create({
+            clinicId: claimRequest.clinicId,
+            username,
+            passwordHash,
+            status: 1,
+          });
+          const savedClinicAccount =
+            await clinicAccountRepository.save(createdClinicAccount);
+          clinicAccountMeta = {
+            clinicAccountId: Number(savedClinicAccount.id),
+            username: savedClinicAccount.username,
+            temporaryPassword,
+          };
+        }
+
+        clinic.isClaimed = 1;
+        clinic.expireAt = null;
+        await clinicRepository.save(clinic);
+      }
+
+      claimRequest.status = payload.action;
+      claimRequest.reviewedBy = adminUserId;
+      claimRequest.reviewedAt = new Date();
+      claimRequest.reviewNote = this.buildClaimReviewNote(
+        adminNote,
+        clinicAccountMeta,
+      );
+
+      const savedClaimRequest = await claimRequestRepository.save(claimRequest);
+
+      return {
+        id: Number(savedClaimRequest.id),
+        status: savedClaimRequest.status,
+        reviewedAt: savedClaimRequest.reviewedAt!,
+        reviewNote: savedClaimRequest.reviewNote,
+        reviewedBy: Number(adminUserId),
+        clinicAccount: clinicAccountMeta,
+      };
+    });
   }
 
   async searchClinics(
@@ -944,5 +1301,50 @@ export class ClinicsService {
         message: '请先认领诊所后再提交回应',
       });
     }
+  }
+
+  private toNullableString(value?: string | null) {
+    const normalizedValue = value?.trim();
+
+    return normalizedValue ? normalizedValue : null;
+  }
+
+  private buildClinicTemporaryPassword(clinicId: number) {
+    return `Clinic@${clinicId}888`;
+  }
+
+  private buildClaimReviewNote(
+    adminNote: string | null,
+    clinicAccount: ReviewClinicClaimRequestResult['clinicAccount'],
+  ) {
+    if (!clinicAccount) {
+      return adminNote;
+    }
+
+    const accountNote = clinicAccount.temporaryPassword
+      ? `后台登录账号：${clinicAccount.username}，初始密码：${clinicAccount.temporaryPassword}`
+      : `后台登录账号：${clinicAccount.username}，密码沿用原账号密码`;
+
+    return adminNote ? `${adminNote}\n${accountNote}` : accountNote;
+  }
+
+  private toClinicClaimRequestListItem(
+    claimRequest: ClinicClaimRequestEntity,
+  ): ClinicClaimRequestListItem {
+    return {
+      id: Number(claimRequest.id),
+      clinicId: claimRequest.clinicId,
+      clinicName: claimRequest.clinic?.name || '未知诊所',
+      clinicAddress: claimRequest.clinic?.address || '',
+      clinicCity: claimRequest.clinic?.city || '',
+      clinicDistrict: claimRequest.clinic?.district || null,
+      applicantName: claimRequest.applicantName,
+      applicantPhone: claimRequest.applicantPhone,
+      proofMaterial: claimRequest.proofMaterial,
+      status: claimRequest.status,
+      reviewNote: claimRequest.reviewNote,
+      reviewedAt: claimRequest.reviewedAt,
+      createdAt: claimRequest.createdAt,
+    };
   }
 }

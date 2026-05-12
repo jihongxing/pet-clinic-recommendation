@@ -28,6 +28,7 @@ frontend/dist/
 logs/
 *.log
 backend/logs/
+backend/uploads/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -44,6 +45,7 @@ backups/
 # Mini program local-only files
 frontend/project.private.config.json
 frontend/project.private.config.*.json
+frontend/config/local.js
 
 # Container / monitoring local data
 monitoring/**/data/

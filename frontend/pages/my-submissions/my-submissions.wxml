@@ -1,0 +1,59 @@
+<view class="page-shell">
+  <scroll-view class="filter-scroll" scroll-x enable-flex show-scrollbar="{{false}}">
+    <view class="filter-row">
+      <text
+        wx:for="{{statusOptions}}"
+        wx:key="value"
+        class="filter-chip {{item.value === activeStatus ? 'filter-chip--active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onStatusChange"
+      >
+        {{item.label}}
+      </text>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{loading}}" class="card state-card">
+    正在加载我的推荐...
+  </view>
+
+  <view wx:elif="{{submissions.length === 0}}" class="card state-card">
+    <text class="state-card__title">你还没有推荐记录</text>
+    <text class="muted">推荐新诊所、补充信息或纠错后，会在这里看到审核进度。</text>
+    <button class="state-card__button" bindtap="createSubmission">去推荐诊所</button>
+  </view>
+
+  <view wx:else class="submission-list">
+    <view class="summary-text muted">共 {{total}} 条推荐记录</view>
+
+    <view wx:for="{{submissions}}" wx:key="id" class="card submission-card">
+      <view class="submission-card__header">
+        <view>
+          <view class="submission-card__name">{{item.name}}</view>
+          <view class="muted submission-card__meta">{{item.locationText}}</view>
+        </view>
+        <text class="submission-card__status {{item.statusBadgeClass}}">{{item.statusLabel}}</text>
+      </view>
+
+      <view class="submission-card__section">
+        <text class="submission-card__label">提交类型</text>
+        <text class="submission-card__value">{{item.submissionTypeLabel}}</text>
+      </view>
+
+      <view class="submission-card__section">
+        <text class="submission-card__label">推荐说明</text>
+        <text class="submission-card__value submission-card__reason">{{item.reason}}</text>
+      </view>
+
+      <view wx:if="{{item.reviewNoteText}}" class="submission-card__section">
+        <text class="submission-card__label">审核反馈</text>
+        <text class="submission-card__value submission-card__review-note">{{item.reviewNoteText}}</text>
+      </view>
+
+      <view class="submission-card__footer">
+        <text class="muted">{{item.createdAtText}}</text>
+        <text class="submission-card__id">#{{item.id}}</text>
+      </view>
+    </view>
+  </view>
+</view>

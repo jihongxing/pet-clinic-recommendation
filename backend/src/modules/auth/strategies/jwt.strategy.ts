@@ -40,6 +40,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       };
     }
 
+    if (actorType === AuthActorType.Admin) {
+      const adminUserId = payload.adminUserId ?? payload.sub;
+      const adminUsername = payload.adminUsername ?? payload.username;
+
+      if (!adminUserId || !adminUsername) {
+        throw new UnauthorizedException({
+          code: RESPONSE_CODE.TOKEN_INVALID,
+          message: '无效的访问令牌',
+        });
+      }
+
+      return {
+        ...payload,
+        actorType: AuthActorType.Admin,
+        actorId: payload.actorId ?? adminUserId,
+        sub: payload.sub ?? adminUserId,
+        adminUserId,
+        adminUsername,
+      };
+    }
+
     const userId = payload.userId ?? payload.sub;
 
     if (!userId || !payload.openid) {

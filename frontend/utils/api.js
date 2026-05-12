@@ -58,6 +58,60 @@ function request(options) {
   });
 }
 
+function parseUploadResponseData(rawData) {
+  if (typeof rawData === 'string') {
+    try {
+      return JSON.parse(rawData);
+    } catch (error) {
+      return {
+        message: '上传响应解析失败',
+      };
+    }
+  }
+
+  if (rawData && typeof rawData === 'object') {
+    return rawData;
+  }
+
+  return {
+    data: rawData,
+  };
+}
+
+function uploadFile(options) {
+  return new Promise((resolve, reject) => {
+    const token = wx.getStorageSync('token');
+
+    wx.uploadFile({
+      ...options,
+      url: `${getAppBaseUrl()}${options.url}`,
+      header: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.header || {}),
+      },
+      success: (res) => {
+        const normalizedResponse = {
+          ...res,
+          data: parseUploadResponseData(res.data),
+        };
+
+        try {
+          const data = normalizeResponse(normalizedResponse);
+          resolve(data);
+        } catch (error) {
+          if (res.statusCode === 401) {
+            clearLoginSession();
+          }
+
+          reject(error);
+        }
+      },
+      fail: (error) => reject(error),
+    });
+  });
+}
+
 module.exports = {
   request,
+  uploadFile,
 };

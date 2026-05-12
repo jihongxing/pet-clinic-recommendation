@@ -5,12 +5,15 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
+  AdminUserEntity,
   ClinicAccountEntity,
   ClinicEntity,
   UserEntity,
 } from '../../database/entities';
+import { AdminAuthController } from './admin-auth.controller';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { ClinicAuthController } from './clinic-auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
@@ -26,9 +29,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         },
       }),
     }),
-    TypeOrmModule.forFeature([UserEntity, ClinicEntity, ClinicAccountEntity]),
+    TypeOrmModule.forFeature([
+      AdminUserEntity,
+      UserEntity,
+      ClinicEntity,
+      ClinicAccountEntity,
+    ]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AdminAuthController, ClinicAuthController],
   providers: [AuthService, JwtStrategy],
   exports: [JwtModule, PassportModule],
 })

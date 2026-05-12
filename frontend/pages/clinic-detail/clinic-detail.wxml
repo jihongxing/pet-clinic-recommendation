@@ -88,6 +88,21 @@
       <button class="primary-button" bindtap="goToTagSelection">
         我已就诊，去评价
       </button>
+      <button class="link-button" bindtap="openRecommendClinic">
+        信息有误 / 我要补充
+      </button>
+    </view>
+
+    <view wx:if="{{!clinic.isClaimed}}" class="card claim-card">
+      <view class="claim-card__content">
+        <view>
+          <view class="section-title section-title--compact">我是这家诊所</view>
+          <text class="muted">诊所负责人可以提交认领申请，通过后再维护资料和回应标签。</text>
+        </view>
+        <button class="secondary-button claim-card__button" bindtap="openClaimClinic">
+          申请认领
+        </button>
+      </view>
     </view>
   </block>
 </view>

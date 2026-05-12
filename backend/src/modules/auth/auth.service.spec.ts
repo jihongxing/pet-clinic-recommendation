@@ -7,9 +7,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import axios from 'axios';
+import { compare } from 'bcryptjs';
 import { Repository } from 'typeorm';
 
 import {
+  AdminUserEntity,
   ClinicAccountEntity,
   ClinicEntity,
   UserEntity,
@@ -19,6 +21,7 @@ import { AuthActorType } from './interfaces/jwt-payload.interface';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let adminUserRepository: jest.Mocked<Repository<AdminUserEntity>>;
   let userRepository: jest.Mocked<Repository<UserEntity>>;
   let clinicRepository: jest.Mocked<Repository<ClinicEntity>>;
   let clinicAccountRepository: jest.Mocked<Repository<ClinicAccountEntity>>;
@@ -55,6 +58,14 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
+          provide: getRepositoryToken(AdminUserEntity),
+          useValue: {
+            findOne: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
           provide: getRepositoryToken(UserEntity),
           useValue: {
             findOne: jest.fn(),
@@ -88,6 +99,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
+    adminUserRepository = module.get(getRepositoryToken(AdminUserEntity));
     userRepository = module.get(getRepositoryToken(UserEntity));
     clinicRepository = module.get(getRepositoryToken(ClinicEntity));
     clinicAccountRepository = module.get(
@@ -97,6 +109,154 @@ describe('AuthService', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('issues an admin actor token in development and creates the admin user when needed', async () => {
+    adminUserRepository.findOne.mockResolvedValueOnce(null);
+    adminUserRepository.create.mockReturnValue({
+      username: 'review_admin',
+      passwordHash: 'hashed-password',
+      displayName: '推荐审核员',
+      status: 1,
+      lastLoginAt: new Date('2026-05-12T00:00:00.000Z'),
+    } as AdminUserEntity);
+    adminUserRepository.save.mockResolvedValue({
+      id: '901',
+      username: 'review_admin',
+      passwordHash: 'hashed-password',
+      displayName: '推荐审核员',
+      status: 1,
+      createdAt: new Date('2026-05-12T00:00:00.000Z'),
+      lastLoginAt: new Date('2026-05-12T00:00:00.000Z'),
+    } as AdminUserEntity);
+
+    const result = await service.issueDevToken({
+      actorType: AuthActorType.Admin,
+      username: 'review_admin',
+      displayName: '推荐审核员',
+      password: 'Admin123456!',
+    });
+
+    expect(adminUserRepository.findOne).toHaveBeenCalledWith({
+      where: { username: 'review_admin' },
+    });
+    expect(jwtService.signAsync).toHaveBeenCalledWith({
+      sub: '901',
+      actorType: AuthActorType.Admin,
+      actorId: '901',
+      adminUserId: '901',
+      adminUsername: 'review_admin',
+      username: 'review_admin',
+    });
+    expect(result.actor).toEqual({
+      actorType: AuthActorType.Admin,
+      actorId: '901',
+      adminUserId: '901',
+      username: 'review_admin',
+      displayName: '推荐审核员',
+      createdAt: new Date('2026-05-12T00:00:00.000Z'),
+      lastLoginAt: new Date('2026-05-12T00:00:00.000Z'),
+    });
+  });
+
+  it('logs in an admin user with username and password', async () => {
+    const passwordHash = await (await import('bcryptjs')).hash('Admin123456!', 10);
+    adminUserRepository.findOne.mockResolvedValue({
+      id: '902',
+      username: 'review_admin',
+      passwordHash,
+      displayName: '审核员 A',
+      status: 1,
+      createdAt: new Date('2026-05-12T00:00:00.000Z'),
+      lastLoginAt: null,
+    } as AdminUserEntity);
+    adminUserRepository.save.mockImplementation(async (entity) => entity as AdminUserEntity);
+
+    const result = await service.loginAdmin({
+      username: 'review_admin',
+      password: 'Admin123456!',
+    });
+
+    expect(jwtService.signAsync).toHaveBeenCalledWith({
+      sub: '902',
+      actorType: AuthActorType.Admin,
+      actorId: '902',
+      adminUserId: '902',
+      adminUsername: 'review_admin',
+      username: 'review_admin',
+    });
+    expect(result.admin).toMatchObject({
+      actorType: AuthActorType.Admin,
+      adminUserId: '902',
+      username: 'review_admin',
+      displayName: '审核员 A',
+    });
+  });
+
+  it('logs in a clinic account with username and password', async () => {
+    const passwordHash = await (await import('bcryptjs')).hash('Clinic@12888', 10);
+    clinicAccountRepository.findOne.mockResolvedValue({
+      id: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+      passwordHash,
+      status: 1,
+      createdAt: new Date('2026-05-13T08:00:00.000Z'),
+    } as ClinicAccountEntity);
+
+    const result = await service.loginClinic({
+      username: 'clinic_admin_12',
+      password: 'Clinic@12888',
+    });
+
+    expect(jwtService.signAsync).toHaveBeenCalledWith({
+      sub: '301',
+      actorType: AuthActorType.Clinic,
+      actorId: '301',
+      clinicAccountId: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+    });
+    expect(result.clinic).toMatchObject({
+      actorType: AuthActorType.Clinic,
+      clinicAccountId: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+    });
+  });
+
+  it('returns clinic session for an active clinic account', async () => {
+    clinicAccountRepository.findOne.mockResolvedValue({
+      id: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+      status: 1,
+      createdAt: new Date('2026-05-13T08:00:00.000Z'),
+    } as ClinicAccountEntity);
+
+    await expect(service.getClinicSession('301')).resolves.toEqual({
+      actorType: AuthActorType.Clinic,
+      actorId: '301',
+      clinicAccountId: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+      createdAt: new Date('2026-05-13T08:00:00.000Z'),
+    });
+
+    expect(clinicAccountRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        id: '301',
+        status: 1,
+      },
+    });
+  });
+
+  it('throws when clinic session target is missing or disabled', async () => {
+    clinicAccountRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.getClinicSession('999')).rejects.toThrow(
+      '诊所账号不存在或已停用',
+    );
   });
 
   it('creates a user and returns a token for development mock login', async () => {

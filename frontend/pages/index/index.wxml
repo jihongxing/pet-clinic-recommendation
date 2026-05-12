@@ -79,6 +79,7 @@
     <view wx:elif="{{!loading && clinics.length === 0}}" class="state-card card">
       <text class="state-card__title">附近还没有匹配结果</text>
       <text class="muted">可以切换排序、半径或标签后再试一次</text>
+      <button class="state-card__button" bindtap="openRecommendClinic">推荐附近诊所</button>
     </view>
 
     <block wx:else>

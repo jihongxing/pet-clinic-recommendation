@@ -23,6 +23,7 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:run:dist": "node dist/database/run-migrations.js",
     "migration:revert": "npm run typeorm -- migration:revert",
+    "seed:staging:onboarding": "ts-node -r tsconfig-paths/register src/database/scripts/prepare-staging-onboarding.ts",
     "seed:verify:tags": "ts-node -r tsconfig-paths/register src/database/scripts/verify-tag-seeds.ts",
     "seed:verify:clinics": "ts-node -r tsconfig-paths/register src/database/scripts/verify-clinic-seeds.ts"
   },

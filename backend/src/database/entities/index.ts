@@ -1,7 +1,10 @@
+import { AdminUserEntity } from './admin-user.entity';
 import { AbnormalBehaviorEntity } from './abnormal-behavior.entity';
 import { ClinicEntity } from './clinic.entity';
 import { ClinicAccountEntity } from './clinic-account.entity';
 import { ClinicClaimRequestEntity } from './clinic-claim-request.entity';
+import { ClinicSubmissionReviewLogEntity } from './clinic-submission-review-log.entity';
+import { ClinicSubmissionEntity } from './clinic-submission.entity';
 import { ClinicReviewEntity } from './clinic-review.entity';
 import { ClinicTagResponseEntity } from './clinic-tag-response.entity';
 import { ClinicTagStatEntity } from './clinic-tag-stat.entity';
@@ -15,9 +18,12 @@ import { UserEntity } from './user.entity';
 import { UserTagLogEntity } from './user-tag-log.entity';
 import { UserReferralEntity } from './user-referral.entity';
 
+export * from './admin-user.entity';
 export * from './abnormal-behavior.entity';
 export * from './clinic-account.entity';
 export * from './clinic-claim-request.entity';
+export * from './clinic-submission-review-log.entity';
+export * from './clinic-submission.entity';
 export * from './clinic.entity';
 export * from './clinic-review.entity';
 export * from './clinic-tag-response.entity';
@@ -36,10 +42,13 @@ export * from './user-tag-log.entity';
 export * from './user-referral.entity';
 
 export const DATABASE_ENTITIES = [
+  AdminUserEntity,
   UserEntity,
   ClinicEntity,
   ClinicAccountEntity,
   ClinicClaimRequestEntity,
+  ClinicSubmissionReviewLogEntity,
+  ClinicSubmissionEntity,
   TagEntity,
   ExtraTagOptionEntity,
   ClinicReviewEntity,

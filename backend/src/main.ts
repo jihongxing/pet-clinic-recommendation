@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'path';
 
 import { API_PREFIX } from './common/constants/app.constants';
 import { validationExceptionFactory } from './common/factories/validation-exception.factory';
@@ -15,6 +16,12 @@ async function bootstrap() {
   const logger = app.get(AppLoggerService);
 
   app.useLogger(logger);
+  app.useStaticAssets(join(__dirname, '..', '..', 'admin-console'), {
+    prefix: '/admin-console/',
+  });
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   if (configService.get<boolean>('app.trustProxy')) {
     app.set('trust proxy', true);

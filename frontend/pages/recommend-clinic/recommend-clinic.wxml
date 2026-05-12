@@ -1,0 +1,238 @@
+<view class="page-shell">
+  <view class="card intro-card">
+    <view class="section-title">{{pageTitle}}</view>
+    <text class="muted intro-card__hint">{{pageHint}}</text>
+  </view>
+
+  <view class="card type-card">
+    <view class="section-title section-title--compact">提交类型</view>
+    <view class="type-list">
+      <view
+        wx:for="{{submissionTypeOptions}}"
+        wx:key="value"
+        class="type-item {{submissionType === item.value ? 'type-item--active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onSubmissionTypeChange"
+      >
+        <text class="type-item__label">{{item.label}}</text>
+        <text class="muted type-item__helper">{{item.helper}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card draft-card">
+    <view class="section-head">
+      <view class="section-title section-title--compact">已带入的信息</view>
+      <text class="source-badge">{{source}}</text>
+    </view>
+
+    <view class="detail-row">
+      <text class="detail-row__label">诊所名称</text>
+      <text>{{clinicDraft.name || '待填写'}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">地址</text>
+      <text>{{clinicDraft.address || '待填写'}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">城市 / 区域</text>
+      <text>{{clinicDraft.city || '待填写'}} {{clinicDraft.district || ''}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">电话</text>
+      <text>{{clinicDraft.phone || '待填写'}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">营业时间</text>
+      <text>{{clinicDraft.businessHours || '待填写'}}</text>
+    </view>
+    <view wx:if="{{clinicDraft.keyword}}" class="detail-row">
+      <text class="detail-row__label">搜索关键词</text>
+      <text>{{clinicDraft.keyword}}</text>
+    </view>
+  </view>
+
+  <view class="card form-card">
+    <view class="section-title section-title--compact">推荐信息</view>
+
+    <view class="form-field">
+      <text class="form-field__label">诊所名称</text>
+      <input
+        class="form-field__input"
+        data-field="name"
+        value="{{form.name}}"
+        placeholder="请输入诊所名称"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="form-field">
+      <text class="form-field__label">地址</text>
+      <input
+        class="form-field__input"
+        data-field="address"
+        value="{{form.address}}"
+        placeholder="请输入诊所地址"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="form-grid">
+      <view class="form-field">
+        <text class="form-field__label">城市</text>
+        <input
+          class="form-field__input"
+          data-field="city"
+          value="{{form.city}}"
+          placeholder="如：北京"
+          bindinput="onFieldInput"
+        />
+      </view>
+
+      <view class="form-field">
+        <text class="form-field__label">区域</text>
+        <input
+          class="form-field__input"
+          data-field="district"
+          value="{{form.district}}"
+          placeholder="如：朝阳区"
+          bindinput="onFieldInput"
+        />
+      </view>
+    </view>
+
+    <view class="form-grid">
+      <view class="form-field">
+        <text class="form-field__label">电话</text>
+        <input
+          class="form-field__input"
+          data-field="phone"
+          value="{{form.phone}}"
+          placeholder="请输入联系电话"
+          bindinput="onFieldInput"
+        />
+      </view>
+
+      <view class="form-field">
+        <text class="form-field__label">营业时间</text>
+        <input
+          class="form-field__input"
+          data-field="businessHours"
+          value="{{form.businessHours}}"
+          placeholder="如：09:00-21:00"
+          bindinput="onFieldInput"
+        />
+      </view>
+    </view>
+
+    <view class="form-field">
+      <view class="photo-section__header">
+        <text class="form-field__label">诊所照片（可选，最多 3 张）</text>
+        <text class="muted photo-section__hint">上传门头、环境或营业信息照片，便于审核</text>
+      </view>
+      <button
+        class="secondary-button photo-picker-button"
+        loading="{{uploadingPhotos}}"
+        disabled="{{uploadingPhotos || submitting || form.photos.length >= 3}}"
+        bindtap="choosePhotos"
+      >
+        {{uploadingPhotos ? '上传中...' : form.photos.length >= 3 ? '已达上限' : '选择图片并上传'}}
+      </button>
+
+      <view wx:if="{{form.photos.length > 0}}" class="photo-tags">
+        <view
+          wx:for="{{form.photos}}"
+          wx:key="*this"
+          class="photo-tag"
+        >
+          <image
+            class="photo-tag__thumb"
+            src="{{item}}"
+            mode="aspectFill"
+            data-url="{{item}}"
+            bindtap="previewPhoto"
+          />
+          <view class="photo-tag__body">
+            <text class="photo-tag__text">{{item}}</text>
+            <view class="photo-tag__actions">
+              <text class="photo-tag__action" data-url="{{item}}" bindtap="previewPhoto">预览</text>
+              <text class="photo-tag__remove" data-index="{{index}}" bindtap="removePhoto">移除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-field">
+      <text class="form-field__label">推荐 / 纠错说明</text>
+      <textarea
+        class="form-field__textarea"
+        data-field="reason"
+        value="{{form.reason}}"
+        placeholder="请说明为什么推荐这家诊所，或当前信息哪里有误"
+        maxlength="500"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="match-actions">
+      <button
+        class="secondary-button match-actions__button"
+        loading="{{checkingMatches}}"
+        disabled="{{checkingMatches || submitting}}"
+        bindtap="checkMatches"
+      >
+        {{checkingMatches ? '检查中...' : '先检查是否已存在'}}
+      </button>
+      <text class="muted match-actions__hint">提交前会自动再做一次重复检查</text>
+    </view>
+
+    <view wx:if="{{matchedClinics.length > 0}}" class="match-panel">
+      <view class="match-panel__header">
+        <text class="match-panel__title">可能重复的诊所</text>
+        <text class="match-panel__hint">先看看是不是同一家，避免重复收录</text>
+      </view>
+
+      <view
+        wx:for="{{matchedClinics}}"
+        wx:key="clinicId"
+        class="match-card"
+      >
+        <view class="match-card__header">
+          <view>
+            <view class="match-card__name">{{item.name}}</view>
+            <view class="muted match-card__meta">{{item.locationText}}</view>
+          </view>
+          <view class="match-card__score">
+            <text class="match-card__score-label">匹配度</text>
+            <text class="match-card__score-value">{{item.matchScore}}</text>
+          </view>
+        </view>
+
+        <view class="match-card__section">
+          <text class="match-card__reason">{{item.reasonText}}</text>
+        </view>
+
+        <view class="match-card__footer">
+          <text class="muted">{{item.phone || item.distanceText}}</text>
+          <text
+            class="match-card__action"
+            data-clinic-id="{{item.clinicId}}"
+            bindtap="viewMatchedClinic"
+          >
+            查看详情
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <button
+      class="primary-button form-card__submit"
+      loading="{{submitting}}"
+      disabled="{{submitting || uploadingPhotos}}"
+      bindtap="submitRecommendation"
+    >
+      {{submitting ? '提交中...' : '提交推荐'}}
+    </button>
+  </view>
+</view>

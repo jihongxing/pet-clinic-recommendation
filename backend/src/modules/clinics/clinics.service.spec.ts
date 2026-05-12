@@ -5,7 +5,9 @@ import { DataSource } from 'typeorm';
 
 import {
   ClinicAccountEntity,
+  ClinicClaimRequestEntity,
   ClinicEntity,
+  ClaimStatus,
   ClinicTagResponseEntity,
   ResponseStatus,
   TagEntity,
@@ -16,10 +18,21 @@ import { ClinicsService } from './clinics.service';
 
 describe('ClinicsService', () => {
   let service: ClinicsService;
-  let dataSource: { query: jest.Mock };
+  let dataSource: { query: jest.Mock; transaction?: jest.Mock };
   let redisService: { get: jest.Mock; set: jest.Mock };
-  let clinicRepository: { findOne: jest.Mock };
-  let clinicAccountRepository: { findOne: jest.Mock };
+  let clinicRepository: { findOne: jest.Mock; save: jest.Mock };
+  let clinicAccountRepository: {
+    create: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
+  let clinicClaimRequestRepository: {
+    create: jest.Mock;
+    find: jest.Mock;
+    findAndCount: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
   let clinicTagResponseRepository: {
     create: jest.Mock;
     findOne: jest.Mock;
@@ -40,9 +53,19 @@ describe('ClinicsService', () => {
 
     clinicRepository = {
       findOne: jest.fn(),
+      save: jest.fn(),
     };
     clinicAccountRepository = {
+      create: jest.fn(),
       findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    clinicClaimRequestRepository = {
+      create: jest.fn(),
+      find: jest.fn(),
+      findAndCount: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
     };
     clinicTagResponseRepository = {
       create: jest.fn(),
@@ -74,6 +97,10 @@ describe('ClinicsService', () => {
           useValue: clinicAccountRepository,
         },
         {
+          provide: getRepositoryToken(ClinicClaimRequestEntity),
+          useValue: clinicClaimRequestRepository,
+        },
+        {
           provide: getRepositoryToken(ClinicTagResponseEntity),
           useValue: clinicTagResponseRepository,
         },
@@ -85,6 +112,30 @@ describe('ClinicsService', () => {
     }).compile();
 
     service = module.get<ClinicsService>(ClinicsService);
+    dataSource.transaction = jest.fn(
+      async (
+        callback: (manager: {
+          getRepository: (entity: unknown) => unknown;
+        }) => unknown,
+      ) =>
+        callback({
+          getRepository: (entity: unknown) => {
+            if (entity === ClinicEntity) {
+              return clinicRepository;
+            }
+
+            if (entity === ClinicClaimRequestEntity) {
+              return clinicClaimRequestRepository;
+            }
+
+            if (entity === ClinicAccountEntity) {
+              return clinicAccountRepository;
+            }
+
+            throw new Error('Unexpected repository');
+          },
+        }),
+    );
   });
 
   it('returns clinics by fuzzy name or address search', async () => {
@@ -265,6 +316,446 @@ describe('ClinicsService', () => {
       expect.any(String),
       300,
     );
+  });
+
+  it('creates a pending clinic claim request for an unclaimed clinic', async () => {
+    clinicRepository.findOne.mockResolvedValue({
+      id: 1,
+      status: 1,
+      isClaimed: 0,
+    } as ClinicEntity);
+    clinicClaimRequestRepository.findOne.mockResolvedValue(null);
+    clinicClaimRequestRepository.create.mockImplementation(
+      (payload) => payload as ClinicClaimRequestEntity,
+    );
+    clinicClaimRequestRepository.save.mockResolvedValue({
+      id: '2001',
+      status: ClaimStatus.Pending,
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.createClinicClaimRequest(1, '21', {
+        applicantName: '张三',
+        applicantPhone: '13800000000',
+        proofMaterial: '营业执照编号 ABC-123',
+      }),
+    ).resolves.toEqual({
+      id: 2001,
+      status: ClaimStatus.Pending,
+    });
+
+    expect(clinicClaimRequestRepository.create).toHaveBeenCalledWith({
+      clinicId: 1,
+      submitterUserId: '21',
+      applicantName: '张三',
+      applicantPhone: '13800000000',
+      proofMaterial: '营业执照编号 ABC-123',
+      status: ClaimStatus.Pending,
+    });
+  });
+
+  it('rejects claim request when clinic already has pending request', async () => {
+    clinicRepository.findOne.mockResolvedValue({
+      id: 1,
+      status: 1,
+      isClaimed: 0,
+    } as ClinicEntity);
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2001',
+      status: ClaimStatus.Pending,
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.createClinicClaimRequest(1, '21', {
+        applicantName: '张三',
+        applicantPhone: '13800000000',
+      }),
+    ).rejects.toThrow('该诊所已有认领申请正在审核中');
+  });
+
+  it('returns current user clinic claim requests', async () => {
+    clinicClaimRequestRepository.find.mockResolvedValue([
+      {
+        id: '2001',
+        clinicId: 1,
+        applicantName: '张三',
+        applicantPhone: '13800000000',
+        proofMaterial: '营业执照',
+        status: ClaimStatus.Pending,
+        reviewNote: null,
+        reviewedAt: null,
+        createdAt: new Date('2026-05-12T12:00:00.000Z'),
+        clinic: {
+          id: 1,
+          name: '爱宠动物医院',
+          address: '北京市朝阳区建国路88号',
+          city: '北京',
+          district: '朝阳区',
+        } as ClinicEntity,
+      } as ClinicClaimRequestEntity,
+    ]);
+
+    await expect(service.getMyClinicClaimRequests('21')).resolves.toEqual({
+      list: [
+        {
+          id: 2001,
+          clinicId: 1,
+          clinicName: '爱宠动物医院',
+          clinicAddress: '北京市朝阳区建国路88号',
+          clinicCity: '北京',
+          clinicDistrict: '朝阳区',
+          applicantName: '张三',
+          applicantPhone: '13800000000',
+          proofMaterial: '营业执照',
+          status: ClaimStatus.Pending,
+          reviewNote: null,
+          reviewedAt: null,
+          createdAt: new Date('2026-05-12T12:00:00.000Z'),
+        },
+      ],
+      total: 1,
+    });
+  });
+
+  it('returns admin claim requests with status filter and submitter info', async () => {
+    clinicClaimRequestRepository.findAndCount.mockResolvedValue([
+      [
+        {
+          id: '2003',
+          clinicId: 12,
+          applicantName: '李四',
+          applicantPhone: '13900000000',
+          proofMaterial: '营业执照与工牌',
+          status: ClaimStatus.Pending,
+          reviewNote: null,
+          reviewedAt: null,
+          reviewedBy: null,
+          createdAt: new Date('2026-05-12T13:00:00.000Z'),
+          clinic: {
+            id: 12,
+            name: '望京爱宠动物医院',
+            address: '北京市朝阳区望京路 2 号',
+            city: '北京',
+            district: '朝阳区',
+          } as ClinicEntity,
+          submitterUser: {
+            id: '21',
+            nickname: '阿福家长',
+            city: '北京',
+          },
+        } as ClinicClaimRequestEntity,
+      ],
+      1,
+    ]);
+
+    const result = await service.getAdminClaimRequests({
+      status: ClaimStatus.Pending,
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(clinicClaimRequestRepository.findAndCount).toHaveBeenCalledWith({
+      where: {
+        status: ClaimStatus.Pending,
+      },
+      relations: {
+        clinic: true,
+        submitterUser: true,
+      },
+      order: {
+        createdAt: 'DESC',
+        id: 'DESC',
+      },
+      skip: 0,
+      take: 20,
+    });
+    expect(result).toEqual({
+      list: [
+        {
+          id: 2003,
+          clinicId: 12,
+          clinicName: '望京爱宠动物医院',
+          clinicAddress: '北京市朝阳区望京路 2 号',
+          clinicCity: '北京',
+          clinicDistrict: '朝阳区',
+          applicantName: '李四',
+          applicantPhone: '13900000000',
+          proofMaterial: '营业执照与工牌',
+          status: ClaimStatus.Pending,
+          reviewNote: null,
+          reviewedAt: null,
+          createdAt: new Date('2026-05-12T13:00:00.000Z'),
+          submitter: {
+            userId: 21,
+            nickname: '阿福家长',
+            city: '北京',
+          },
+          reviewedBy: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
+  it('returns claim request detail for owner user', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2001',
+      clinicId: 1,
+      submitterUserId: '21',
+      applicantName: '张三',
+      applicantPhone: '13800000000',
+      proofMaterial: '营业执照',
+      status: ClaimStatus.Rejected,
+      reviewNote: '证照信息不完整',
+      reviewedAt: new Date('2026-05-13T12:00:00.000Z'),
+      createdAt: new Date('2026-05-12T12:00:00.000Z'),
+      clinic: {
+        id: 1,
+        name: '爱宠动物医院',
+        address: '北京市朝阳区建国路88号',
+        city: '北京',
+        district: '朝阳区',
+      } as ClinicEntity,
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.getClinicClaimRequestDetail(2001, {
+        sub: '21',
+        actorType: AuthActorType.User,
+        actorId: '21',
+        userId: '21',
+      }),
+    ).resolves.toMatchObject({
+      id: 2001,
+      clinicId: 1,
+      submitterUserId: 21,
+      status: ClaimStatus.Rejected,
+      reviewNote: '证照信息不完整',
+    });
+  });
+
+  it('rejects claim request detail when user is not owner', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2001',
+      clinicId: 1,
+      submitterUserId: '21',
+      applicantName: '张三',
+      applicantPhone: '13800000000',
+      proofMaterial: '营业执照',
+      status: ClaimStatus.Pending,
+      reviewNote: null,
+      reviewedAt: null,
+      createdAt: new Date('2026-05-12T12:00:00.000Z'),
+      clinic: {
+        id: 1,
+        name: '爱宠动物医院',
+        address: '北京市朝阳区建国路88号',
+        city: '北京',
+        district: '朝阳区',
+      } as ClinicEntity,
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.getClinicClaimRequestDetail(2001, {
+        sub: '99',
+        actorType: AuthActorType.User,
+        actorId: '99',
+        userId: '99',
+      }),
+    ).rejects.toThrow('无权查看该认领申请');
+  });
+
+  it('rejects claim request detail when actor type is clinic', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2001',
+      clinicId: 1,
+      submitterUserId: '21',
+      applicantName: '张三',
+      applicantPhone: '13800000000',
+      proofMaterial: '营业执照',
+      status: ClaimStatus.Pending,
+      reviewNote: null,
+      reviewedAt: null,
+      createdAt: new Date('2026-05-12T12:00:00.000Z'),
+      clinic: {
+        id: 1,
+        name: '爱宠动物医院',
+        address: '北京市朝阳区建国路88号',
+        city: '北京',
+        district: '朝阳区',
+      } as ClinicEntity,
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.getClinicClaimRequestDetail(2001, {
+        sub: '301',
+        actorType: AuthActorType.Clinic,
+        actorId: '301',
+        clinicAccountId: '301',
+        clinicId: 1,
+        username: 'clinic_admin_1',
+      }),
+    ).rejects.toThrow('当前令牌不支持查看认领申请');
+  });
+
+  it('approves a clinic claim request and creates clinic account', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2001',
+      clinicId: 12,
+      status: ClaimStatus.Pending,
+      reviewNote: null,
+    } as ClinicClaimRequestEntity);
+    clinicRepository.findOne.mockResolvedValue({
+      id: 12,
+      status: 1,
+      isClaimed: 0,
+      expireAt: null,
+    } as ClinicEntity);
+    clinicAccountRepository.findOne.mockResolvedValue(null);
+    clinicAccountRepository.create.mockImplementation(
+      (payload) => payload as ClinicAccountEntity,
+    );
+    clinicAccountRepository.save.mockResolvedValue({
+      id: '301',
+      clinicId: 12,
+      username: 'clinic_admin_12',
+      passwordHash: 'hashed-password',
+      status: 1,
+      createdAt: new Date('2026-05-13T08:00:00.000Z'),
+    } as ClinicAccountEntity);
+    clinicRepository.save.mockImplementation(
+      async (entity) => entity as ClinicEntity,
+    );
+    clinicClaimRequestRepository.save.mockImplementation(
+      async (entity) => entity as ClinicClaimRequestEntity,
+    );
+
+    const result = await service.reviewClinicClaimRequest('901', 2001, {
+      action: ClaimStatus.Approved,
+      note: '证照和联系人信息一致',
+    });
+
+    expect(clinicAccountRepository.create).toHaveBeenCalledWith({
+      clinicId: 12,
+      username: 'clinic_admin_12',
+      passwordHash: expect.any(String),
+      status: 1,
+    });
+    expect(clinicRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 12,
+        isClaimed: 1,
+        expireAt: null,
+      }),
+    );
+    expect(result).toMatchObject({
+      id: 2001,
+      status: ClaimStatus.Approved,
+      reviewedBy: 901,
+      clinicAccount: {
+        clinicAccountId: 301,
+        username: 'clinic_admin_12',
+        temporaryPassword: 'Clinic@12888',
+      },
+    });
+    expect(result.reviewNote).toContain('后台登录账号：clinic_admin_12');
+  });
+
+  it('enables an existing clinic account when approving claim request', async () => {
+    const passwordHash = '$2a$10$existing.hash.value';
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2002',
+      clinicId: 18,
+      status: ClaimStatus.Pending,
+      reviewNote: null,
+    } as ClinicClaimRequestEntity);
+    clinicRepository.findOne.mockResolvedValue({
+      id: 18,
+      status: 1,
+      isClaimed: 0,
+      expireAt: null,
+    } as ClinicEntity);
+    clinicAccountRepository.findOne.mockResolvedValue({
+      id: '302',
+      clinicId: 18,
+      username: 'clinic_admin_18',
+      passwordHash,
+      status: 0,
+      createdAt: new Date('2026-05-12T08:00:00.000Z'),
+    } as ClinicAccountEntity);
+    clinicAccountRepository.save.mockImplementation(
+      async (entity) => entity as ClinicAccountEntity,
+    );
+    clinicRepository.save.mockImplementation(
+      async (entity) => entity as ClinicEntity,
+    );
+    clinicClaimRequestRepository.save.mockImplementation(
+      async (entity) => entity as ClinicClaimRequestEntity,
+    );
+
+    const result = await service.reviewClinicClaimRequest('901', 2002, {
+      action: ClaimStatus.Approved,
+      note: '恢复原账号',
+    });
+
+    expect(clinicAccountRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: '302',
+        status: 1,
+      }),
+    );
+    expect(result.clinicAccount).toMatchObject({
+      clinicAccountId: 302,
+      username: 'clinic_admin_18',
+      temporaryPassword: null,
+    });
+    expect(result.reviewNote).toContain('密码沿用原账号密码');
+  });
+
+  it('rejects a clinic claim request without creating clinic account', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2004',
+      clinicId: 22,
+      status: ClaimStatus.Pending,
+      reviewNote: null,
+    } as ClinicClaimRequestEntity);
+    clinicClaimRequestRepository.save.mockImplementation(
+      async (entity) => entity as ClinicClaimRequestEntity,
+    );
+
+    const result = await service.reviewClinicClaimRequest('901', 2004, {
+      action: ClaimStatus.Rejected,
+      note: '证照照片模糊，无法核验',
+    });
+
+    expect(clinicRepository.findOne).not.toHaveBeenCalled();
+    expect(clinicAccountRepository.findOne).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      id: 2004,
+      status: ClaimStatus.Rejected,
+      reviewedAt: expect.any(Date),
+      reviewNote: '证照照片模糊，无法核验',
+      reviewedBy: 901,
+      clinicAccount: null,
+    });
+  });
+
+  it('rejects claim review when request is already in terminal status', async () => {
+    clinicClaimRequestRepository.findOne.mockResolvedValue({
+      id: '2005',
+      clinicId: 22,
+      status: ClaimStatus.Approved,
+      reviewNote: '已审核',
+    } as ClinicClaimRequestEntity);
+
+    await expect(
+      service.reviewClinicClaimRequest('901', 2005, {
+        action: ClaimStatus.Rejected,
+        note: '重复审核',
+      }),
+    ).rejects.toThrow('当前认领申请状态不允许继续审核');
   });
 
   it('throws when clinic detail target does not exist', async () => {

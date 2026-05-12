@@ -24,8 +24,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { READ_RATE_LIMIT } from '../../common/decorators/rate-limit.decorator';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator';
 import { WRITE_RATE_LIMIT } from '../../common/decorators/rate-limit.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { ClinicAuthGuard } from '../auth/guards/clinic-auth.guard';
+import { UserAuthGuard } from '../auth/guards/user-auth.guard';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { CreateClinicClaimRequestDto } from './dto/create-clinic-claim-request.dto';
 import { GetClinicDetailQueryDto } from './dto/get-clinic-detail-query.dto';
 import {
   CLINIC_NEARBY_RADIUS_OPTIONS,
@@ -36,6 +38,7 @@ import { SearchClinicsQueryDto } from './dto/search-clinics-query.dto';
 import { SubmitClinicResponseDto } from './dto/submit-clinic-response.dto';
 import {
   ClinicDetailResponse,
+  CreateClinicClaimRequestResult,
   ClinicResponseListResult,
   ClinicsService,
   NearbyClinicsResponse,
@@ -202,5 +205,32 @@ export class ClinicsController {
     @Body() payload: SubmitClinicResponseDto,
   ): Promise<SubmitClinicResponseResult> {
     return this.clinicsService.submitClinicResponse(id, user, payload);
+  }
+
+  @Post(':id/claim-requests')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth('bearer')
+  @ResponseMessage('认领申请已提交，等待审核')
+  @ApiOperation({ summary: '提交诊所认领申请' })
+  @ApiParam({ name: 'id', type: Number, description: '诊所 ID' })
+  @ApiOkResponse({ description: '返回认领申请结果' })
+  @ApiBadRequestResponse({
+    description: '诊所已被认领、已有待审核申请或请求参数不合法',
+  })
+  @ApiUnauthorizedResponse({
+    description: '未提供或提供了无效的用户 Bearer Token',
+  })
+  @ApiNotFoundResponse({ description: '诊所不存在' })
+  @WRITE_RATE_LIMIT
+  createClinicClaimRequest(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() payload: CreateClinicClaimRequestDto,
+  ): Promise<CreateClinicClaimRequestResult> {
+    return this.clinicsService.createClinicClaimRequest(
+      id,
+      user.userId!,
+      payload,
+    );
   }
 }

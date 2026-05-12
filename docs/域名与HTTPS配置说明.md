@@ -107,7 +107,7 @@ https://api.petmed.example.com
 
 默认约定：
 
-- `develop` -> `http://localhost:3000/api/v1`
+- `develop` -> `http://localhost:3000/api/v1`，可用 `frontend/config/local.js` 覆盖本地联调地址
 - `trial` -> `https://api-staging.petmed.example.com/api/v1`
 - `release` -> `https://api.petmed.example.com/api/v1`
 

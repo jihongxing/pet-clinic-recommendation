@@ -1,0 +1,71 @@
+.detail-card {
+  padding: 28rpx;
+}
+
+.detail-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20rpx;
+  margin-bottom: 10rpx;
+}
+
+.detail-status {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.detail-status--pending {
+  background: #f6f1eb;
+  color: #8c6c52;
+}
+
+.detail-status--success {
+  background: #edf8f2;
+  color: #2f8e63;
+}
+
+.detail-status--rejected {
+  background: #fff0ed;
+  color: #d86b4a;
+}
+
+.section-title--compact {
+  margin-bottom: 0;
+  font-size: 32rpx;
+}
+
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f2e7df;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row__label {
+  color: #7a6c63;
+  font-size: 24rpx;
+}
+
+.state-card {
+  padding: 48rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}

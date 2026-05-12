@@ -1,0 +1,51 @@
+<view class="page-shell">
+  <view wx:if="{{loading}}" class="card state-card">
+    正在加载认领申请详情...
+  </view>
+
+  <view wx:elif="{{!detail}}" class="card state-card">
+    <text class="state-card__title">认领详情暂时不可用</text>
+    <text class="muted">请返回上一页后重试</text>
+  </view>
+
+  <block wx:else>
+    <view class="card detail-card">
+      <view class="detail-card__header">
+        <view>
+          <view class="section-title section-title--compact">{{detail.clinicName}}</view>
+          <text class="muted">{{detail.locationText}}</text>
+        </view>
+        <text class="detail-status {{detail.statusBadgeClass}}">{{detail.statusLabel}}</text>
+      </view>
+
+      <view class="detail-row">
+        <text class="detail-row__label">联系人</text>
+        <text>{{detail.applicantName}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">联系电话</text>
+        <text>{{detail.applicantPhone}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">提交时间</text>
+        <text>{{detail.createdAtText}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">审核时间</text>
+        <text>{{detail.reviewedAtText}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">证明材料</text>
+        <text>{{detail.proofMaterial || '未填写'}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">审核反馈</text>
+        <text>{{detail.reviewNote || '暂无反馈，等待审核中'}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-row__label">申请单号</text>
+        <text>#{{detail.id}}</text>
+      </view>
+    </view>
+  </block>
+</view>

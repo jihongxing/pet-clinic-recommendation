@@ -1,0 +1,106 @@
+.summary-text {
+  margin-bottom: 18rpx;
+  font-size: 22rpx;
+}
+
+.claim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.claim-card {
+  padding: 26rpx;
+}
+
+.claim-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.claim-card__name {
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.claim-card__meta {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.claim-card__status {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.claim-card__status--pending {
+  background: #f6f1eb;
+  color: #8c6c52;
+}
+
+.claim-card__status--success {
+  background: #edf8f2;
+  color: #2f8e63;
+}
+
+.claim-card__status--rejected {
+  background: #fff0ed;
+  color: #d86b4a;
+}
+
+.claim-card__section {
+  margin-top: 22rpx;
+}
+
+.claim-card__label {
+  display: block;
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.claim-card__value {
+  margin-top: 14rpx;
+  display: block;
+  color: #2f2925;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.claim-card__review-note {
+  white-space: pre-wrap;
+}
+
+.claim-card__footer {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.claim-card__id {
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.state-card {
+  padding: 48rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}

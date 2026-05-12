@@ -3,10 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
   ClinicAccountEntity,
+  ClinicClaimRequestEntity,
   ClinicEntity,
   ClinicTagResponseEntity,
   TagEntity,
 } from '../../database/entities';
+import { ClinicClaimRequestsController } from './clinic-claim-requests.controller';
 import { ClinicsController } from './clinics.controller';
 import { ClinicCacheService } from './services/clinic-cache.service';
 import { ClinicScoreCronService } from './services/clinic-score-cron.service';
@@ -19,11 +21,12 @@ import { ClinicsService } from './clinics.service';
     TypeOrmModule.forFeature([
       ClinicEntity,
       ClinicAccountEntity,
+      ClinicClaimRequestEntity,
       ClinicTagResponseEntity,
       TagEntity,
     ]),
   ],
-  controllers: [ClinicsController],
+  controllers: [ClinicsController, ClinicClaimRequestsController],
   providers: [
     ClinicsService,
     ClinicCacheService,

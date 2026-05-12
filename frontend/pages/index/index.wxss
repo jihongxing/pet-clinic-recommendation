@@ -129,6 +129,17 @@
   font-weight: 600;
 }
 
+.state-card__button {
+  margin-top: 12rpx;
+  min-height: 76rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: #d86b4a;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
 .clinic-card {
   padding: 24rpx;
   margin-bottom: 20rpx;

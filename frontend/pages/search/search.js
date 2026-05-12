@@ -30,6 +30,15 @@ function buildSearchResultViewModel(clinic) {
   };
 }
 
+function buildRecommendClinicUrl(params = {}) {
+  const query = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+    .join('&');
+
+  return `/pages/recommend-clinic/recommend-clinic${query ? `?${query}` : ''}`;
+}
+
 Page({
   data: {
     keyword: '',
@@ -273,6 +282,16 @@ Page({
 
     wx.navigateTo({
       url: `/pages/clinic-detail/clinic-detail?id=${id}${locationQuery}`,
+    });
+  },
+
+  openRecommendClinic() {
+    wx.navigateTo({
+      url: buildRecommendClinicUrl({
+        source: 'search-empty',
+        keyword: this.data.searchedKeyword || this.data.keyword,
+        city: this.locationState ? this.locationState.city : DEFAULT_LOCATION.city,
+      }),
     });
   },
 });

@@ -40,6 +40,7 @@
     <view class="state-card card">
       <text class="state-card__title">没有找到相关诊所</text>
       <text class="muted">试试换个关键词，或者搜索诊所地址片段</text>
+      <button class="state-card__button" bindtap="openRecommendClinic">找不到，推荐一家</button>
     </view>
   </view>
 

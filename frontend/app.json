@@ -5,6 +5,11 @@
     "pages/map/map",
     "pages/profile/profile",
     "pages/my-reviews/my-reviews",
+    "pages/my-submissions/my-submissions",
+    "pages/my-claim-requests/my-claim-requests",
+    "pages/claim-request-detail/claim-request-detail",
+    "pages/recommend-clinic/recommend-clinic",
+    "pages/claim-clinic/claim-clinic",
     "pages/clinic-detail/clinic-detail",
     "pages/tag-selection/tag-selection"
   ],
