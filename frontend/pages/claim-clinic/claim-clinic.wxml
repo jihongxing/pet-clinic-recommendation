@@ -1,0 +1,77 @@
+<view class="page-shell">
+  <view class="card intro-card">
+    <view class="section-title">申请认领诊所</view>
+    <text class="muted intro-card__hint">
+      认领通过后，诊所负责人就可以维护资料并回应大家的评价。请填写真实联系人信息和方便我们确认身份的说明。
+    </text>
+  </view>
+
+  <view class="card draft-card">
+    <view class="section-title section-title--compact">当前诊所</view>
+    <view class="detail-row">
+      <text class="detail-row__label">诊所名称</text>
+      <text>{{clinicDraft.name || '待补充'}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">地址</text>
+      <text>{{clinicDraft.address || '待补充'}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">城市 / 区域</text>
+      <text>{{clinicDraft.city || '待补充'}} {{clinicDraft.district || ''}}</text>
+    </view>
+    <view class="detail-row">
+      <text class="detail-row__label">联系电话</text>
+      <text>{{clinicDraft.phone || '待补充'}}</text>
+    </view>
+  </view>
+
+  <view class="card form-card">
+    <view class="section-title section-title--compact">认领信息</view>
+
+    <view class="form-field">
+      <text class="form-field__label">联系人姓名</text>
+      <input
+        class="form-field__input"
+        data-field="applicantName"
+        value="{{form.applicantName}}"
+        placeholder="请输入联系人姓名"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="form-field">
+      <text class="form-field__label">联系人手机号</text>
+      <input
+        class="form-field__input"
+        data-field="applicantPhone"
+        value="{{form.applicantPhone}}"
+        type="number"
+        maxlength="11"
+        placeholder="请输入手机号"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="form-field">
+      <text class="form-field__label">方便我们确认身份的说明</text>
+      <textarea
+        class="form-field__textarea"
+        data-field="proofMaterial"
+        value="{{form.proofMaterial}}"
+        maxlength="2000"
+        placeholder="例如营业执照、门头照片、工作证，或其他能帮助我们确认身份的信息"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <button
+      class="primary-button form-card__submit"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bindtap="submitClaimRequest"
+    >
+      {{submitting ? '提交中...' : '提交认领申请'}}
+    </button>
+  </view>
+</view>

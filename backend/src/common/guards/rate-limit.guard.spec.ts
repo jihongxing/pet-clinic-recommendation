@@ -58,7 +58,7 @@ describe('RateLimitGuard', () => {
       baseUrl: '/clinics',
       route: { path: '/nearby' },
       ip: '127.0.0.1',
-      user: { userId: 'user-1' },
+      user: { actorType: 'user', actorId: 'user-1' },
     };
     const context = {
       getHandler: jest.fn(),
@@ -70,7 +70,7 @@ describe('RateLimitGuard', () => {
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(redisService.consumeRateLimit).toHaveBeenCalledWith(
-      'rate-limit:read:GET:/clinics/nearby:user-1',
+      'rate-limit:read:GET:/clinics/nearby:user:user-1',
       10,
       60,
     );

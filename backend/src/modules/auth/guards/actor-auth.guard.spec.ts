@@ -2,6 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 
 import { RESPONSE_CODE } from '../../../common/constants/response-code.constants';
 import { AuthActorType } from '../interfaces/jwt-payload.interface';
+import { AdminAuthGuard } from './admin-auth.guard';
 import { ClinicAuthGuard } from './clinic-auth.guard';
 import { UserAuthGuard } from './user-auth.guard';
 
@@ -87,5 +88,47 @@ describe('ActorAuthGuards', () => {
         message: '当前令牌不支持访问诊所接口',
       });
     }
+  });
+
+  it('allows an admin actor through AdminAuthGuard', () => {
+    const guard = new AdminAuthGuard();
+    const adminActor = {
+      sub: '901',
+      actorType: AuthActorType.Admin,
+      actorId: '901',
+      adminUserId: '901',
+      adminUsername: 'review_admin',
+    };
+
+    expect(guard.handleRequest(null, adminActor, undefined, context)).toBe(
+      adminActor,
+    );
+  });
+
+  it('rejects a clinic actor on AdminAuthGuard', () => {
+    const guard = new AdminAuthGuard();
+
+    expect(() =>
+      guard.handleRequest(
+        null,
+        {
+          sub: '301',
+          actorType: AuthActorType.Clinic,
+          actorId: '301',
+          clinicAccountId: '301',
+          clinicId: 8,
+          username: 'clinic_admin_8',
+        },
+        undefined,
+        context,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        response: {
+          code: RESPONSE_CODE.TOKEN_INVALID,
+          message: '当前令牌不支持访问管理接口',
+        },
+      }),
+    );
   });
 });

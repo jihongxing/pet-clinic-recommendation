@@ -5,6 +5,11 @@
     "pages/map/map",
     "pages/profile/profile",
     "pages/my-reviews/my-reviews",
+    "pages/my-submissions/my-submissions",
+    "pages/my-claim-requests/my-claim-requests",
+    "pages/claim-request-detail/claim-request-detail",
+    "pages/recommend-clinic/recommend-clinic",
+    "pages/claim-clinic/claim-clinic",
     "pages/clinic-detail/clinic-detail",
     "pages/tag-selection/tag-selection"
   ],
@@ -38,6 +43,11 @@
         "text": "我的"
       }
     ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于按当前位置推荐附近诊所和展示地图信息"
+    }
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json"

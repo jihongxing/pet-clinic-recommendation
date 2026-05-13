@@ -33,6 +33,7 @@
 - [本地启动](#-本地启动)
 - [真机测试清单](docs/真机测试清单.md)
 - [Staging 部署](#staging-部署)
+- [发布检查清单](docs/发布检查清单.md)
 - [域名与 HTTPS](docs/域名与HTTPS配置说明.md)
 - [数据库备份与恢复](docs/数据库备份与恢复说明.md)
 - [上线回滚方案](docs/上线回滚方案.md)
@@ -80,6 +81,7 @@
 - 当前仓库已经验证通过 `podman compose` 启动 PostgreSQL + Redis
 - 当前后端可用 `npm run start:dev` 本机直跑
 - 当前前端是微信小程序工程骨架，可直接在微信开发者工具中打开
+- 当前还提供了一个独立审核后台壳，便于联调推荐审核流程
 
 ### 1. 克隆项目
 
@@ -156,6 +158,12 @@ npm run seed:verify:tags
 npm run seed:verify:clinics
 ```
 
+如果要准备诊所收录与入驻的 staging 验收账号和样例数据，还可以执行：
+
+```powershell
+npm run seed:staging:onboarding
+```
+
 开发模式启动：
 
 ```powershell
@@ -164,8 +172,9 @@ npm run start:dev
 
 启动后可访问：
 
-- 健康检查：`http://localhost:3000/api/v1/health`
+- 健康检查：`http://localhost:3000/api/v1/health`（本地联调可由 `frontend/config/local.js` 覆盖端口）
 - Swagger 文档：`http://localhost:3000/api-docs`
+- 审核后台：`http://localhost:3000/admin-console/`
 
 ### 5. 打开前端小程序工程
 
@@ -235,7 +244,7 @@ podman compose down
 
 - **PostgreSQL**: `localhost:5432`
 - **Redis**: `localhost:6379`
-- **Backend API**: `localhost:3000`
+- **Backend API**: `localhost:3000`（本地联调端口可由 `frontend/config/local.js` 覆盖）
 - **Prometheus**: `localhost:9090`
 - **Alertmanager**: `localhost:9093`
 - **Grafana**: `localhost:3001`
@@ -529,6 +538,19 @@ cd backend && npm run build
 cd ../frontend && npm run lint
 ```
 
+如果要按当前仓库的发布门禁完整自检，建议执行：
+
+```bash
+cd backend && npm run check:release
+cd ../frontend && npm run check
+```
+
+说明：
+
+- `backend:check:release` 会顺序执行 `lint:check`、单元测试、构建、migration 和三类种子校验
+- `frontend:check` 当前会执行小程序前端 lint
+- GitHub Actions 已同步接入同一套门禁，工作流文件见 `.github/workflows/quality-gate.yml`
+
 ---
 
 ## 📄 许可证
@@ -542,6 +564,7 @@ cd ../frontend && npm run lint
 ## 🗂️ 发布资料
 
 - [GitHub仓库发布说明](docs/GitHub仓库发布说明.md)
+- [发布检查清单](docs/发布检查清单.md)
 - [小程序提审前说明](docs/小程序提审前说明.md)
 - [真机测试清单](docs/真机测试清单.md)
 - [测试账号与种子数据说明](docs/测试账号与种子数据说明.md)

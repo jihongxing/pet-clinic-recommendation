@@ -32,7 +32,7 @@
       </view>
     </view>
     <view class="hero__footer">
-      <text class="muted">共找到 {{total}} 家可联调诊所</text>
+      <text class="muted">共找到 {{total}} 家附近可查看的诊所</text>
       <text class="hero__refresh" bindtap="refreshHome">刷新位置</text>
     </view>
   </view>
@@ -53,7 +53,7 @@
   </view>
 
   <view class="section">
-    <view class="section-title">标签筛选</view>
+    <view class="section-title">印象筛选</view>
     <scroll-view class="tag-scroll" scroll-x enable-flex>
       <view class="tag-scroll__inner">
         <view
@@ -70,6 +70,23 @@
   </view>
 
   <view class="section">
+    <view class="section-title">能力筛选</view>
+    <scroll-view class="tag-scroll" scroll-x enable-flex>
+      <view class="tag-scroll__inner">
+        <view
+          wx:for="{{capabilityFilterOptions}}"
+          wx:key="key"
+          class="filter-pill {{selectedCapabilityFilterKey === item.key ? 'filter-pill--active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="onCapabilityFilterChange"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="section">
     <view class="section-title">附近诊所</view>
 
     <view wx:if="{{loading && clinics.length === 0}}" class="state-card card">
@@ -78,7 +95,8 @@
 
     <view wx:elif="{{!loading && clinics.length === 0}}" class="state-card card">
       <text class="state-card__title">附近还没有匹配结果</text>
-      <text class="muted">可以切换排序、半径或标签后再试一次</text>
+      <text class="muted">可以切换排序、半径或印象后再试一次</text>
+      <button class="state-card__button" bindtap="openRecommendClinic">推荐附近诊所</button>
     </view>
 
     <block wx:else>
@@ -107,6 +125,15 @@
             {{tag.name}} {{tag.count}}
           </text>
         </view>
+        <view wx:if="{{item.capabilityHighlights.length > 0}}" class="clinic-card__capabilities">
+          <text
+            wx:for="{{item.capabilityHighlights}}"
+            wx:key="*this"
+            class="pill clinic-pill clinic-pill--capability"
+          >
+            {{item}}
+          </text>
+        </view>
         <view class="clinic-card__metrics">
           <view class="metric-item">
             <text class="metric-item__label">口碑</text>
@@ -117,12 +144,12 @@
             <text class="metric-item__value">{{item.priceScoreText}}</text>
           </view>
           <view class="metric-item">
-            <text class="metric-item__label">可信度</text>
+            <text class="metric-item__label">信息可靠性</text>
             <text class="metric-item__value">{{item.confidenceText}}</text>
           </view>
         </view>
         <view class="clinic-card__footer">
-          <text class="muted">{{item.totalUsers}} 人打过标签 · {{item.totalTagCount}} 条标签</text>
+          <text class="muted">{{item.totalUsers}} 人留下过印象 · {{item.totalTagCount}} 条评价点</text>
           <text class="clinic-card__detail">查看详情</text>
         </view>
       </view>

@@ -6,13 +6,21 @@ const DEFAULT_LOCATION = {
   lng: 116.4436,
   city: '北京',
   label: '北京·朝阳区',
-  hint: '已使用北京开发坐标加载附近诊所',
+  hint: '暂时先为你展示北京附近的诊所',
 };
 
 const RADIUS_OPTIONS = [
   { label: '3km', value: 3000 },
   { label: '10km', value: 10000 },
   { label: '20km', value: 20000 },
+];
+
+const CAPABILITY_FILTER_OPTIONS = [
+  { key: 'all', label: '全部能力', request: {} },
+  { key: 'cat', label: '猫专科', request: { specialtyCodes: ['sp_cat'] } },
+  { key: 'emergency', label: '急诊能力', request: { serviceCodes: ['srv_emergency'] } },
+  { key: 'ultrasound', label: '有B超', request: { equipmentCodes: ['eq_ultrasound'] } },
+  { key: 'inpatient', label: '可住院', request: { facilityCodes: ['fc_inpatient'] } },
 ];
 
 function isBeijingCoordinate(lat, lng) {
@@ -48,12 +56,24 @@ function buildClinicViewModel(clinic, selectedTagId) {
     reputationScoreText: formatScore(clinic.reputationScore),
     priceScoreText: formatScore(clinic.priceScore),
     confidenceText: `${Math.round(Number(clinic.confidenceFactor || 0) * 100)}%`,
+    capabilityHighlights: Array.isArray(clinic.capabilityHighlights)
+      ? clinic.capabilityHighlights
+      : [],
     topTags: (clinic.topTags || []).map((tag) => ({
       ...tag,
       isActive:
         normalizedSelectedTagId !== null && Number(tag.id) === normalizedSelectedTagId,
     })),
   };
+}
+
+function buildRecommendClinicUrl(params = {}) {
+  const query = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== '')
+    .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+    .join('&');
+
+  return `/pages/recommend-clinic/recommend-clinic${query ? `?${query}` : ''}`;
 }
 
 Page({
@@ -70,6 +90,8 @@ Page({
     ],
     filterTags: [{ id: 'all', name: '全部' }],
     selectedTagId: 'all',
+    capabilityFilterOptions: CAPABILITY_FILTER_OPTIONS,
+    selectedCapabilityFilterKey: 'all',
     clinics: [],
     page: 1,
     pageSize: 10,
@@ -132,13 +154,13 @@ Page({
 
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '开发种子数据当前仅覆盖北京，已切换到北京默认坐标',
+            hint: '当前先展示北京范围内的诊所',
           });
         },
         fail: () => {
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '定位未开启，已使用北京默认坐标',
+            hint: '定位未开启，先为你展示北京附近的诊所',
           });
         },
       });
@@ -188,6 +210,10 @@ Page({
     const nextPage = reset ? 1 : this.data.page + 1;
     const selectedTagId =
       this.data.selectedTagId === 'all' ? null : Number(this.data.selectedTagId);
+    const selectedCapabilityFilter =
+      CAPABILITY_FILTER_OPTIONS.find(
+        (item) => item.key === this.data.selectedCapabilityFilterKey,
+      ) || CAPABILITY_FILTER_OPTIONS[0];
 
     try {
       const response = await request({
@@ -202,6 +228,18 @@ Page({
           page: nextPage,
           pageSize: this.data.pageSize,
           ...(selectedTagId ? { tagIds: String(selectedTagId) } : {}),
+          ...(selectedCapabilityFilter.request.serviceCodes
+            ? { serviceCodes: selectedCapabilityFilter.request.serviceCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.specialtyCodes
+            ? { specialtyCodes: selectedCapabilityFilter.request.specialtyCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.equipmentCodes
+            ? { equipmentCodes: selectedCapabilityFilter.request.equipmentCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.facilityCodes
+            ? { facilityCodes: selectedCapabilityFilter.request.facilityCodes.join(',') }
+            : {}),
         },
       });
 
@@ -277,6 +315,19 @@ Page({
     this.fetchClinics({ reset: true });
   },
 
+  onCapabilityFilterChange(event) {
+    const { key } = event.currentTarget.dataset;
+
+    if (!key || key === this.data.selectedCapabilityFilterKey) {
+      return;
+    }
+
+    this.setData({
+      selectedCapabilityFilterKey: key,
+    });
+    this.fetchClinics({ reset: true });
+  },
+
   refreshHome() {
     this.bootstrap({ refreshLocation: true });
   },
@@ -304,6 +355,15 @@ Page({
 
     wx.switchTab({
       url: page,
+    });
+  },
+
+  openRecommendClinic() {
+    wx.navigateTo({
+      url: buildRecommendClinicUrl({
+        source: 'index-empty',
+        city: this.locationState ? this.locationState.city : DEFAULT_LOCATION.city,
+      }),
     });
   },
 });

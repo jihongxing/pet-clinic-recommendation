@@ -1,0 +1,151 @@
+.filter-scroll {
+  margin-bottom: 18rpx;
+  white-space: nowrap;
+}
+
+.filter-row {
+  display: inline-flex;
+  gap: 16rpx;
+  padding-right: 24rpx;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14rpx 24rpx;
+  border-radius: 999rpx;
+  background: #f6efe8;
+  color: #7a6c63;
+  font-size: 24rpx;
+}
+
+.filter-chip--active {
+  background: #d86b4a;
+  color: #fff7f2;
+  font-weight: 600;
+}
+
+.summary-text {
+  margin-bottom: 18rpx;
+  font-size: 22rpx;
+}
+
+.submission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.submission-card {
+  padding: 26rpx;
+}
+
+.submission-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.submission-card__name {
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.submission-card__meta {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.submission-card__status {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.submission-card__status--pending {
+  background: #f6f1eb;
+  color: #8c6c52;
+}
+
+.submission-card__status--warning {
+  background: #fff5e7;
+  color: #b87819;
+}
+
+.submission-card__status--success {
+  background: #edf8f2;
+  color: #2f8e63;
+}
+
+.submission-card__status--rejected {
+  background: #fff0ed;
+  color: #d86b4a;
+}
+
+.submission-card__section {
+  margin-top: 22rpx;
+}
+
+.submission-card__label {
+  display: block;
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.submission-card__value {
+  margin-top: 14rpx;
+  display: block;
+  color: #2f2925;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.submission-card__reason,
+.submission-card__review-note {
+  white-space: pre-wrap;
+}
+
+.submission-card__footer {
+  margin-top: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.submission-card__id {
+  color: #7a6c63;
+  font-size: 22rpx;
+}
+
+.state-card {
+  padding: 48rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.state-card__title {
+  font-size: 30rpx;
+  color: #2f2925;
+  font-weight: 600;
+}
+
+.state-card__button {
+  margin-top: 18rpx;
+  min-width: 240rpx;
+  border: none;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #f28a64, #d86b4a);
+  color: #fffaf6;
+  font-size: 26rpx;
+  font-weight: 600;
+}

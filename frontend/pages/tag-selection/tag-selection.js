@@ -154,7 +154,7 @@ Page({
       });
 
       this.setData({
-        title: config.title || '请选择原因',
+        title: config.title || '选几个最贴近的感受',
         reasonOptions: markOptionsSelected(config.tags, []),
         selectedReasonOptions: [],
         extraOptions: markOptionsSelected(config.extraTags, []),
@@ -171,7 +171,7 @@ Page({
         selectedReasonOptions: [],
       });
       wx.showToast({
-        title: error.message || '加载标签配置失败',
+        title: error.message || '加载选项失败',
         icon: 'none',
       });
     } finally {
@@ -196,7 +196,7 @@ Page({
     } else {
       if (selectedTagIds.length >= this.data.limits.maxSelect) {
         wx.showToast({
-          title: `最多选择${this.data.limits.maxSelect}个原因`,
+          title: `最多选择${this.data.limits.maxSelect}项感受`,
           icon: 'none',
         });
         return;
@@ -217,7 +217,7 @@ Page({
   continueToExtras() {
     if (this.data.selectedTagIds.length < this.data.limits.minSelect) {
       wx.showToast({
-        title: `请至少选择${this.data.limits.minSelect}个原因`,
+        title: `请至少选择${this.data.limits.minSelect}项感受`,
         icon: 'none',
       });
       return;
@@ -263,7 +263,7 @@ Page({
     } else {
       if (selectedExtraTagIds.length >= this.data.limits.maxExtra) {
         wx.showToast({
-          title: `最多补充${this.data.limits.maxExtra}个标签`,
+          title: `最多补充${this.data.limits.maxExtra}个印象`,
           icon: 'none',
         });
         return;
@@ -297,7 +297,7 @@ Page({
 
     if (this.data.selectedTagIds.length < this.data.limits.minSelect) {
       wx.showToast({
-        title: `请至少选择${this.data.limits.minSelect}个原因`,
+        title: `请至少选择${this.data.limits.minSelect}项感受`,
         icon: 'none',
       });
       return;

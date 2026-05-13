@@ -16,6 +16,7 @@ import { validate } from './config/env.validation';
 import { DATABASE_ENTITIES } from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClinicsModule } from './modules/clinics/clinics.module';
+import { ClinicSubmissionsModule } from './modules/clinic-submissions/clinic-submissions.module';
 import { HealthModule } from './modules/health/health.module';
 import { LoggingModule } from './modules/logging/logging.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -57,6 +58,7 @@ import { AppService } from './app.service';
     LoggingModule,
     MetricsModule,
     AuthModule,
+    ClinicSubmissionsModule,
     ClinicsModule,
     OrdersModule,
     RedisModule,

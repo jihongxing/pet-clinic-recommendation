@@ -10,6 +10,12 @@
 
   <block wx:else>
     <view class="card detail-card">
+      <image
+        wx:if="{{clinic.coverPhotoUrl}}"
+        class="detail-cover"
+        src="{{clinic.coverPhotoUrl}}"
+        mode="aspectFill"
+      />
       <view class="detail-card__top">
         <view>
           <view class="section-title">{{clinic.name}}</view>
@@ -41,6 +47,44 @@
         <text class="muted">营业时间</text>
         <text>{{clinic.businessHours || '暂未提供'}}</text>
       </view>
+      <view wx:if="{{clinic.summary}}" class="detail-row">
+        <text class="muted">诊所简介</text>
+        <text>{{clinic.summary}}</text>
+      </view>
+      <view wx:if="{{clinic.capabilityHighlights.length > 0}}" class="detail-row">
+        <text class="muted">已确认的信息</text>
+        <view class="highlight-wrap">
+          <text
+            wx:for="{{clinic.capabilityHighlights}}"
+            wx:key="*this"
+            class="pill tag-item__pill"
+          >
+            {{item}}
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{clinic.capabilityGroups.length > 0}}" class="section">
+      <view
+        wx:for="{{clinic.capabilityGroups}}"
+        wx:key="key"
+        class="tag-group card"
+      >
+        <view class="tag-group__header">
+          <view class="tag-group__title">
+            <text class="tag-group__badge tag-group__badge--trust"></text>
+            <text class="section-title section-title--compact">{{item.title}}</text>
+          </view>
+          <text class="muted">{{item.items.length}} 项服务信息</text>
+        </view>
+        <view class="tag-wrap">
+          <view wx:for="{{item.items}}" wx:key="code" class="tag-item">
+            <text class="pill tag-item__pill">{{item.name}}</text>
+            <text wx:if="{{item.verificationStatus === 'verified'}}" class="tag-item__meta">已确认</text>
+          </view>
+        </view>
+      </view>
     </view>
 
     <view wx:if="{{clinic.tagGroups.length > 0}}" class="section">
@@ -54,7 +98,7 @@
             <text class="tag-group__badge {{item.badgeClass}}"></text>
             <text class="section-title section-title--compact">{{item.title}}</text>
           </view>
-          <text class="muted">{{item.items.length}} 个标签</text>
+          <text class="muted">{{item.items.length}} 条评价点</text>
         </view>
         <view class="tag-wrap">
           <view wx:for="{{item.items}}" wx:key="id" class="tag-item">
@@ -88,6 +132,21 @@
       <button class="primary-button" bindtap="goToTagSelection">
         我已就诊，去评价
       </button>
+      <button class="link-button" bindtap="openRecommendClinic">
+        信息有误 / 我要补充
+      </button>
+    </view>
+
+    <view wx:if="{{!clinic.isClaimed}}" class="card claim-card">
+      <view class="claim-card__content">
+        <view>
+          <view class="section-title section-title--compact">我是这家诊所</view>
+          <text class="muted">诊所负责人可以提交认领申请，通过后再维护资料和回应大家的评价。</text>
+        </view>
+        <button class="secondary-button claim-card__button" bindtap="openClaimClinic">
+          申请认领
+        </button>
+      </view>
     </view>
   </block>
 </view>

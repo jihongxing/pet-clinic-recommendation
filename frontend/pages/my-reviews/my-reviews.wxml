@@ -25,7 +25,7 @@
       </view>
 
       <view class="review-card__section">
-        <text class="review-card__label">主标签</text>
+        <text class="review-card__label">这次的印象</text>
         <view class="review-card__tags">
           <text wx:for="{{item.tags}}" wx:key="id" class="pill review-card__pill">
             {{item.name}}
@@ -34,7 +34,7 @@
       </view>
 
       <view wx:if="{{item.extraTags.length > 0}}" class="review-card__section">
-        <text class="review-card__label">补充标签</text>
+        <text class="review-card__label">补充感受</text>
         <view class="review-card__tags">
           <text
             wx:for="{{item.extraTags}}"

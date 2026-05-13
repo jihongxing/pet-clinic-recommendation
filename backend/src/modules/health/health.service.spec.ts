@@ -70,6 +70,46 @@ describe('HealthService', () => {
     expect(result.timestamp).toEqual(expect.any(String));
   });
 
+  it('returns liveness information without dependency checks', async () => {
+    const result = await service.getLiveness();
+
+    expect(result.status).toBe('ok');
+    expect(result.app).toEqual(
+      expect.objectContaining({
+        status: 'up',
+        name: 'pet-clinic-recommendation-backend',
+        env: 'test',
+      }),
+    );
+    expect(dataSource.query).not.toHaveBeenCalled();
+    expect(redisService.ping).not.toHaveBeenCalled();
+  });
+
+  it('returns ready when database and redis are healthy', async () => {
+    dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
+    redisService.ping.mockResolvedValue('PONG');
+
+    const result = await service.getReadiness();
+
+    expect(result.status).toBe('ready');
+    expect(result.dependencies.database).toEqual({ status: 'up' });
+    expect(result.dependencies.redis).toEqual({ status: 'up' });
+  });
+
+  it('returns not_ready when redis is unavailable', async () => {
+    dataSource.query.mockResolvedValue([{ '?column?': 1 }]);
+    redisService.ping.mockRejectedValue(new Error('redis unavailable'));
+
+    const result = await service.getReadiness();
+
+    expect(result.status).toBe('not_ready');
+    expect(result.dependencies.database).toEqual({ status: 'up' });
+    expect(result.dependencies.redis).toEqual({
+      status: 'down',
+      message: 'redis unavailable',
+    });
+  });
+
   it('returns degraded when database is unavailable', async () => {
     dataSource.query.mockRejectedValue(new Error('database unavailable'));
     redisService.ping.mockResolvedValue('PONG');

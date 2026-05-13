@@ -9,7 +9,9 @@ import {
 } from 'typeorm';
 
 import { AbnormalBehaviorEntity } from './abnormal-behavior.entity';
+import { CapabilityProfileStatus } from './database.enums';
 import { ClinicAccountEntity } from './clinic-account.entity';
+import { ClinicCapabilityEntity } from './clinic-capability.entity';
 import { ClinicClaimRequestEntity } from './clinic-claim-request.entity';
 import { ClinicReviewEntity } from './clinic-review.entity';
 import { ClinicTagResponseEntity } from './clinic-tag-response.entity';
@@ -80,6 +82,33 @@ export class ClinicEntity {
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   district!: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  summary!: string | null;
+
+  @Column({
+    name: 'cover_photo_url',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  coverPhotoUrl!: string | null;
+
+  @Column({
+    name: 'gallery_photos_json',
+    type: 'jsonb',
+    default: () => "'[]'::jsonb",
+  })
+  galleryPhotosJson!: string[];
+
+  @Column({
+    name: 'capability_profile_status',
+    type: 'enum',
+    enum: CapabilityProfileStatus,
+    enumName: 'capability_profile_status',
+    default: CapabilityProfileStatus.Empty,
+  })
+  capabilityProfileStatus!: CapabilityProfileStatus;
 
   @Column({
     name: 'trust_score',
@@ -231,4 +260,10 @@ export class ClinicEntity {
     (orderConfirmation) => orderConfirmation.clinic,
   )
   orderConfirmations!: OrderConfirmationEntity[];
+
+  @OneToMany(
+    () => ClinicCapabilityEntity,
+    (clinicCapability) => clinicCapability.clinic,
+  )
+  clinicCapabilities!: ClinicCapabilityEntity[];
 }

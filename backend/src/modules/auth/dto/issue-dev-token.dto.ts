@@ -7,6 +7,7 @@ import {
   IsString,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 import { AuthActorType } from '../interfaces/jwt-payload.interface';
@@ -83,4 +84,24 @@ export class IssueDevTokenDto {
   @IsString()
   @MaxLength(100)
   username?: string;
+
+  @ApiPropertyOptional({
+    description: '管理员展示名，仅 actorType=admin 时使用',
+    example: '推荐审核员',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  displayName?: string;
+
+  @ApiPropertyOptional({
+    description:
+      '开发态管理员密码；仅 actorType=admin 时用于创建或重置登录密码',
+    example: 'Admin123456!',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  password?: string;
 }

@@ -888,3 +888,117 @@ const submitRes = await fetch('/api/v1/tags/submit', {
 完整的Swagger文档地址：`https://api.yourapp.com/api-docs`
 
 可以在线测试所有接口。
+
+---
+
+## 13. V2 能力档案接口补充
+
+### 13.1 获取能力字典
+
+**接口**: `GET /clinics/capability-definitions`
+
+**说明**
+
+- 返回按能力类型分组的能力字典
+- 推荐页、后台能力管理页都会消费这个接口
+
+**示例响应**
+
+```json
+{
+  "services": [{ "id": 1, "code": "srv_outpatient", "name": "常规门诊", "type": "service", "sortOrder": 1, "isActive": true }],
+  "specialties": [{ "id": 8, "code": "sp_cat", "name": "猫专科", "type": "specialty", "sortOrder": 1, "isActive": true }],
+  "equipment": [{ "id": 15, "code": "eq_ultrasound", "name": "B超", "type": "equipment", "sortOrder": 1, "isActive": true }],
+  "facilities": [{ "id": 21, "code": "fc_inpatient", "name": "可住院", "type": "facility", "sortOrder": 1, "isActive": true }],
+  "speciesSupported": [{ "id": 26, "code": "species_cat", "name": "接诊猫", "type": "species_supported", "sortOrder": 1, "isActive": true }]
+}
+```
+
+### 13.2 推荐提交新增能力字段
+
+**接口**: `POST /clinic-submissions`
+
+新增请求体字段：
+
+```json
+{
+  "services": ["srv_outpatient", "srv_emergency"],
+  "specialties": ["sp_cat"],
+  "equipment": ["eq_ultrasound"],
+  "facilities": ["fc_inpatient"],
+  "speciesSupported": ["species_cat", "species_dog"],
+  "capabilityNotes": "夜间有值班医生，B超建议提前预约"
+}
+```
+
+### 13.3 诊所详情新增能力档案返回
+
+**接口**: `GET /clinics/:id`
+
+新增返回字段：
+
+- `summary`
+- `coverPhotoUrl`
+- `galleryPhotos`
+- `capabilityProfileStatus`
+- `capabilities`
+
+`capabilities` 结构：
+
+```json
+{
+  "services": [{ "code": "srv_emergency", "name": "急诊接诊", "verificationStatus": "verified" }],
+  "specialties": [{ "code": "sp_cat", "name": "猫专科", "verificationStatus": "verified" }],
+  "equipment": [{ "code": "eq_ultrasound", "name": "B超", "verificationStatus": "verified" }],
+  "facilities": [{ "code": "fc_inpatient", "name": "可住院", "verificationStatus": "verified" }],
+  "speciesSupported": [{ "code": "species_cat", "name": "接诊猫", "verificationStatus": "verified" }],
+  "highlights": ["猫专科", "B超"]
+}
+```
+
+### 13.4 列表 / 搜索新增能力筛选
+
+**接口**
+
+- `GET /clinics/nearby`
+- `GET /clinics/search`
+
+新增查询参数：
+
+- `serviceCodes`
+- `specialtyCodes`
+- `equipmentCodes`
+- `facilityCodes`
+
+示例：
+
+```text
+GET /clinics/search?keyword=望京&city=北京&specialtyCodes=sp_cat&equipmentCodes=eq_ultrasound
+GET /clinics/nearby?lat=39.9075&lng=116.4574&radius=3000&city=北京&facilityCodes=fc_inpatient
+```
+
+### 13.5 后台能力管理接口
+
+**诊所能力管理**
+
+- `GET /admin/clinics/:id/capabilities`
+- `PUT /admin/clinics/:id/capabilities`
+
+`PUT` 请求体示例：
+
+```json
+{
+  "items": [
+    { "code": "sp_cat", "verificationStatus": "verified", "note": "门店海报与病例照片已核验" },
+    { "code": "eq_ultrasound", "verificationStatus": "verified" },
+    { "code": "fc_inpatient", "verificationStatus": "pending" }
+  ]
+}
+```
+
+**能力字典管理**
+
+- `GET /admin/capability-definitions`
+- `POST /admin/capability-definitions`
+- `PATCH /admin/capability-definitions/:id`
+- `DELETE /admin/capability-definitions/:id`

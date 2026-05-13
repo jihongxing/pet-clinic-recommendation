@@ -4,19 +4,24 @@ import {
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
+import { compare, hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
 
 import { RESPONSE_CODE } from '../../common/constants/response-code.constants';
 import {
+  AdminUserEntity,
   ClinicAccountEntity,
   ClinicEntity,
   UserEntity,
 } from '../../database/entities';
+import { AdminLoginDto } from './dto/admin-login.dto';
+import { ClinicLoginDto } from './dto/clinic-login.dto';
 import { IssueDevTokenDto } from './dto/issue-dev-token.dto';
 import { AuthActorType, JwtPayload } from './interfaces/jwt-payload.interface';
 import { WechatSessionResponse } from './interfaces/wechat-session.interface';
@@ -24,6 +29,8 @@ import { WechatSessionResponse } from './interfaces/wechat-session.interface';
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRepository(AdminUserEntity)
+    private readonly adminUserRepository: Repository<AdminUserEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(ClinicEntity)
@@ -34,6 +41,51 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
+  async loginAdmin(payload: AdminLoginDto) {
+    const username = payload.username.trim();
+    const password = payload.password.trim();
+
+    if (!username || !password) {
+      throw new BadRequestException({
+        code: RESPONSE_CODE.PARAM_MISSING,
+        message: '用户名和密码不能为空',
+      });
+    }
+
+    const adminUser = await this.adminUserRepository.findOne({
+      where: {
+        username,
+        status: 1,
+      },
+    });
+
+    if (!adminUser) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '用户名或密码错误',
+      });
+    }
+
+    const passwordMatched = await compare(password, adminUser.passwordHash);
+
+    if (!passwordMatched) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '用户名或密码错误',
+      });
+    }
+
+    adminUser.lastLoginAt = new Date();
+    const savedAdminUser = await this.adminUserRepository.save(adminUser);
+
+    return {
+      token: await this.jwtService.signAsync(
+        this.buildAdminJwtPayload(savedAdminUser),
+      ),
+      admin: this.toAdminActor(savedAdminUser),
+    };
+  }
+
   async login(code: string) {
     const openid = await this.resolveOpenIdByCode(code);
     const user = await this.resolveUserByOpenId(openid);
@@ -41,6 +93,48 @@ export class AuthService {
     return {
       token: await this.jwtService.signAsync(this.buildUserJwtPayload(user)),
       user: this.toUserActor(user),
+    };
+  }
+
+  async loginClinic(payload: ClinicLoginDto) {
+    const username = payload.username.trim();
+    const password = payload.password.trim();
+
+    if (!username || !password) {
+      throw new BadRequestException({
+        code: RESPONSE_CODE.PARAM_MISSING,
+        message: '用户名和密码不能为空',
+      });
+    }
+
+    const clinicAccount = await this.clinicAccountRepository.findOne({
+      where: {
+        username,
+        status: 1,
+      },
+    });
+
+    if (!clinicAccount) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '用户名或密码错误',
+      });
+    }
+
+    const passwordMatched = await compare(password, clinicAccount.passwordHash);
+
+    if (!passwordMatched) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '用户名或密码错误',
+      });
+    }
+
+    return {
+      token: await this.jwtService.signAsync(
+        this.buildClinicJwtPayload(clinicAccount),
+      ),
+      clinic: this.toClinicActor(clinicAccount),
     };
   }
 
@@ -53,6 +147,17 @@ export class AuthService {
     }
 
     const actorType = payload.actorType ?? AuthActorType.User;
+
+    if (actorType === AuthActorType.Admin) {
+      const adminUser = await this.resolveDevAdminUser(payload);
+      const tokenPayload = this.buildAdminJwtPayload(adminUser);
+
+      return {
+        token: await this.jwtService.signAsync(tokenPayload),
+        expiresIn: this.configService.get<string>('auth.jwtExpiresIn') ?? '7d',
+        actor: this.toAdminActor(adminUser),
+      };
+    }
 
     if (actorType === AuthActorType.Clinic) {
       const clinicAccount = await this.resolveDevClinicAccount(payload);
@@ -73,6 +178,42 @@ export class AuthService {
       expiresIn: this.configService.get<string>('auth.jwtExpiresIn') ?? '7d',
       actor: this.toUserActor(user),
     };
+  }
+
+  async getAdminSession(adminUserId: string) {
+    const adminUser = await this.adminUserRepository.findOne({
+      where: {
+        id: adminUserId,
+        status: 1,
+      },
+    });
+
+    if (!adminUser) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '管理员账号不存在或已停用',
+      });
+    }
+
+    return this.toAdminActor(adminUser);
+  }
+
+  async getClinicSession(clinicAccountId: string) {
+    const clinicAccount = await this.clinicAccountRepository.findOne({
+      where: {
+        id: clinicAccountId,
+        status: 1,
+      },
+    });
+
+    if (!clinicAccount) {
+      throw new UnauthorizedException({
+        code: RESPONSE_CODE.UNAUTHORIZED,
+        message: '诊所账号不存在或已停用',
+      });
+    }
+
+    return this.toClinicActor(clinicAccount);
   }
 
   private async resolveOpenIdByCode(code: string) {
@@ -235,6 +376,45 @@ export class AuthService {
     return this.userRepository.save(user);
   }
 
+  private async resolveDevAdminUser(payload: IssueDevTokenDto) {
+    const normalizedUsername = payload.username?.trim();
+
+    if (!normalizedUsername) {
+      throw new BadRequestException({
+        code: RESPONSE_CODE.PARAM_MISSING,
+        message: '管理员开发令牌需要提供 username',
+      });
+    }
+
+    const existingAdminUser = await this.adminUserRepository.findOne({
+      where: { username: normalizedUsername },
+    });
+    const passwordHash = await hash(
+      payload.password?.trim() || 'Admin123456!',
+      10,
+    );
+
+    if (existingAdminUser) {
+      existingAdminUser.displayName =
+        payload.displayName ?? existingAdminUser.displayName;
+      existingAdminUser.passwordHash = passwordHash;
+      existingAdminUser.status = 1;
+      existingAdminUser.lastLoginAt = new Date();
+
+      return this.adminUserRepository.save(existingAdminUser);
+    }
+
+    const adminUser = this.adminUserRepository.create({
+      username: normalizedUsername,
+      passwordHash,
+      displayName: payload.displayName ?? '开发环境审核员',
+      status: 1,
+      lastLoginAt: new Date(),
+    });
+
+    return this.adminUserRepository.save(adminUser);
+  }
+
   private async resolveDevClinicAccount(payload: IssueDevTokenDto) {
     const clinicId = payload.clinicId;
     const normalizedUsername = payload.username?.trim();
@@ -329,6 +509,17 @@ export class AuthService {
     };
   }
 
+  private buildAdminJwtPayload(adminUser: AdminUserEntity): JwtPayload {
+    return {
+      sub: adminUser.id,
+      actorType: AuthActorType.Admin,
+      actorId: adminUser.id,
+      adminUserId: adminUser.id,
+      adminUsername: adminUser.username,
+      username: adminUser.username,
+    };
+  }
+
   private toUserActor(user: UserEntity) {
     return {
       actorType: AuthActorType.User,
@@ -350,6 +541,18 @@ export class AuthService {
       clinicId: clinicAccount.clinicId,
       username: clinicAccount.username,
       createdAt: clinicAccount.createdAt,
+    };
+  }
+
+  private toAdminActor(adminUser: AdminUserEntity) {
+    return {
+      actorType: AuthActorType.Admin,
+      actorId: adminUser.id,
+      adminUserId: adminUser.id,
+      username: adminUser.username,
+      displayName: adminUser.displayName,
+      createdAt: adminUser.createdAt,
+      lastLoginAt: adminUser.lastLoginAt,
     };
   }
 }

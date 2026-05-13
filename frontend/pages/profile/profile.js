@@ -9,6 +9,21 @@ Page({
   data: {
     menus: [
       { key: 'reviews', label: '我的评价', page: '/pages/my-reviews/my-reviews' },
+      {
+        key: 'submissions',
+        label: '我的提交',
+        page: '/pages/my-submissions/my-submissions',
+      },
+      {
+        key: 'claims',
+        label: '我的认领',
+        page: '/pages/my-claim-requests/my-claim-requests',
+      },
+      {
+        key: 'recommend',
+        label: '推荐诊所',
+        page: '/pages/recommend-clinic/recommend-clinic?source=profile',
+      },
       { key: 'favorites', label: '我的收藏' },
       { key: 'orders', label: '我的预约' },
       { key: 'settings', label: '设置' },

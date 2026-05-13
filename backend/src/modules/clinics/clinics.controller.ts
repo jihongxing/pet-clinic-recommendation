@@ -24,8 +24,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { READ_RATE_LIMIT } from '../../common/decorators/rate-limit.decorator';
 import { ResponseMessage } from '../../common/decorators/response-message.decorator';
 import { WRITE_RATE_LIMIT } from '../../common/decorators/rate-limit.decorator';
-import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { ClinicAuthGuard } from '../auth/guards/clinic-auth.guard';
+import { UserAuthGuard } from '../auth/guards/user-auth.guard';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import { CreateClinicClaimRequestDto } from './dto/create-clinic-claim-request.dto';
 import { GetClinicDetailQueryDto } from './dto/get-clinic-detail-query.dto';
 import {
   CLINIC_NEARBY_RADIUS_OPTIONS,
@@ -36,12 +38,15 @@ import { SearchClinicsQueryDto } from './dto/search-clinics-query.dto';
 import { SubmitClinicResponseDto } from './dto/submit-clinic-response.dto';
 import {
   ClinicDetailResponse,
+  CreateClinicClaimRequestResult,
   ClinicResponseListResult,
   ClinicsService,
   NearbyClinicsResponse,
   SearchClinicsResponse,
   SubmitClinicResponseResult,
 } from './clinics.service';
+import { GetCapabilityDefinitionsQueryDto } from './dto/get-capability-definitions-query.dto';
+import { GroupedCapabilityDictionaryResponse } from './services/clinic-capability-profile.service';
 
 @ApiTags('clinics')
 @Controller('clinics')
@@ -70,6 +75,30 @@ export class ClinicsController {
     required: false,
     type: String,
     description: '标签 ID 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'serviceCodes',
+    required: false,
+    type: String,
+    description: '服务能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'specialtyCodes',
+    required: false,
+    type: String,
+    description: '专长能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'equipmentCodes',
+    required: false,
+    type: String,
+    description: '设备能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'facilityCodes',
+    required: false,
+    type: String,
+    description: '设施能力 code 列表，逗号分隔',
   })
   @ApiQuery({
     name: 'city',
@@ -125,6 +154,30 @@ export class ClinicsController {
     description: '经度，用于计算距离',
   })
   @ApiQuery({
+    name: 'serviceCodes',
+    required: false,
+    type: String,
+    description: '服务能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'specialtyCodes',
+    required: false,
+    type: String,
+    description: '专长能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'equipmentCodes',
+    required: false,
+    type: String,
+    description: '设备能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'facilityCodes',
+    required: false,
+    type: String,
+    description: '设施能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
@@ -142,6 +195,17 @@ export class ClinicsController {
     @Query() query: SearchClinicsQueryDto,
   ): Promise<SearchClinicsResponse> {
     return this.clinicsService.searchClinics(query);
+  }
+
+  @Get('capability-definitions')
+  @ResponseMessage('success')
+  @ApiOperation({ summary: '获取诊所能力字典' })
+  @ApiOkResponse({ description: '返回按能力类型分组的能力字典' })
+  @READ_RATE_LIMIT
+  getCapabilityDefinitions(
+    @Query() query: GetCapabilityDefinitionsQueryDto,
+  ): Promise<GroupedCapabilityDictionaryResponse> {
+    return this.clinicsService.getCapabilityDefinitions(query);
   }
 
   @Get(':id')
@@ -202,5 +266,32 @@ export class ClinicsController {
     @Body() payload: SubmitClinicResponseDto,
   ): Promise<SubmitClinicResponseResult> {
     return this.clinicsService.submitClinicResponse(id, user, payload);
+  }
+
+  @Post(':id/claim-requests')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth('bearer')
+  @ResponseMessage('认领申请已提交，等待审核')
+  @ApiOperation({ summary: '提交诊所认领申请' })
+  @ApiParam({ name: 'id', type: Number, description: '诊所 ID' })
+  @ApiOkResponse({ description: '返回认领申请结果' })
+  @ApiBadRequestResponse({
+    description: '诊所已被认领、已有待审核申请或请求参数不合法',
+  })
+  @ApiUnauthorizedResponse({
+    description: '未提供或提供了无效的用户 Bearer Token',
+  })
+  @ApiNotFoundResponse({ description: '诊所不存在' })
+  @WRITE_RATE_LIMIT
+  createClinicClaimRequest(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() payload: CreateClinicClaimRequestDto,
+  ): Promise<CreateClinicClaimRequestResult> {
+    return this.clinicsService.createClinicClaimRequest(
+      id,
+      user.userId!,
+      payload,
+    );
   }
 }

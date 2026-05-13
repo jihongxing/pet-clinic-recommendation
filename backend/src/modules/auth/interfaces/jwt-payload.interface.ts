@@ -1,6 +1,7 @@
 export enum AuthActorType {
   User = 'user',
   Clinic = 'clinic',
+  Admin = 'admin',
 }
 
 export interface JwtPayload {
@@ -12,4 +13,6 @@ export interface JwtPayload {
   clinicId?: number;
   clinicAccountId?: string;
   username?: string;
+  adminUserId?: string;
+  adminUsername?: string;
 }

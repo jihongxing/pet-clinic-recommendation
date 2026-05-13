@@ -1,0 +1,45 @@
+<view class="page-shell">
+  <view wx:if="{{loading}}" class="card state-card">
+    正在加载我的认领申请...
+  </view>
+
+  <view wx:elif="{{claimRequests.length === 0}}" class="card state-card">
+    <text class="state-card__title">你还没有认领申请</text>
+    <text class="muted">从诊所详情页点击“申请认领”后，会在这里查看处理进度和结果。</text>
+  </view>
+
+  <view wx:else class="claim-list">
+    <view class="summary-text muted">共 {{total}} 条认领申请</view>
+
+    <view
+      wx:for="{{claimRequests}}"
+      wx:key="id"
+      class="card claim-card"
+      data-id="{{item.id}}"
+      bindtap="openClaimDetail"
+    >
+      <view class="claim-card__header">
+        <view>
+          <view class="claim-card__name">{{item.clinicName}}</view>
+          <view class="muted claim-card__meta">{{item.locationText}}</view>
+        </view>
+        <text class="claim-card__status {{item.statusBadgeClass}}">{{item.statusLabel}}</text>
+      </view>
+
+      <view class="claim-card__section">
+        <text class="claim-card__label">联系人</text>
+        <text class="claim-card__value">{{item.applicantName}} · {{item.applicantPhone}}</text>
+      </view>
+
+      <view wx:if="{{item.reviewNoteText}}" class="claim-card__section">
+        <text class="claim-card__label">处理结果</text>
+        <text class="claim-card__value claim-card__review-note">{{item.reviewNoteText}}</text>
+      </view>
+
+      <view class="claim-card__footer">
+        <text class="muted">{{item.createdAtText}}</text>
+        <text class="claim-card__id">查看详情 ›</text>
+      </view>
+    </view>
+  </view>
+</view>

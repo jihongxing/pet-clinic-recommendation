@@ -62,8 +62,54 @@ export enum ClaimStatus {
   Rejected = 'rejected',
 }
 
+export enum ClinicSubmissionType {
+  New = 'new',
+  Supplement = 'supplement',
+  Correction = 'correction',
+}
+
+export enum ClinicSubmissionStatus {
+  PendingReview = 'pending_review',
+  NeedInfo = 'need_info',
+  ApprovedNew = 'approved_new',
+  Merged = 'merged',
+  Rejected = 'rejected',
+}
+
+export enum ClinicSubmissionReviewAction {
+  ApprovedNew = 'approved_new',
+  Merged = 'merged',
+  NeedInfo = 'need_info',
+  Rejected = 'rejected',
+}
+
 export enum AbnormalStatus {
   Pending = 'pending',
   Confirmed = 'confirmed',
   Ignored = 'ignored',
+}
+
+export enum CapabilityProfileStatus {
+  Empty = 'empty',
+  Pending = 'pending',
+  Verified = 'verified',
+}
+
+export enum CapabilityType {
+  Service = 'service',
+  Specialty = 'specialty',
+  Equipment = 'equipment',
+  Facility = 'facility',
+  SpeciesSupported = 'species_supported',
+}
+
+export enum CapabilitySourceType {
+  UserSubmission = 'user_submission',
+  AdminManual = 'admin_manual',
+}
+
+export enum CapabilityVerificationStatus {
+  Pending = 'pending',
+  Verified = 'verified',
+  Rejected = 'rejected',
 }
