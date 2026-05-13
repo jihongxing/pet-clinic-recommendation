@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateClinicSubmissionReviewLog2026051200011
-  implements MigrationInterface
-{
+export class CreateClinicSubmissionReviewLog2026051200011 implements MigrationInterface {
   name = 'CreateClinicSubmissionReviewLog2026051200011';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -45,7 +43,9 @@ export class CreateClinicSubmissionReviewLog2026051200011
     await queryRunner.query(
       `DROP INDEX IF EXISTS idx_clinic_submission_review_log_submission;`,
     );
-    await queryRunner.query(`DROP TABLE IF EXISTS clinic_submission_review_log;`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS clinic_submission_review_log;`,
+    );
     await queryRunner.query(
       `DROP TYPE IF EXISTS clinic_submission_review_action;`,
     );

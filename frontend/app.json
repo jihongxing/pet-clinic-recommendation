@@ -44,6 +44,11 @@
       }
     ]
   },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于按当前位置推荐附近诊所和展示地图信息"
+    }
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json"
 }

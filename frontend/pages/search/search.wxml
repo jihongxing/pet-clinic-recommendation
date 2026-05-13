@@ -32,6 +32,24 @@
     </view>
   </view>
 
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title">能力筛选</view>
+      <text class="muted">可与关键词组合</text>
+    </view>
+    <view class="history-list">
+      <text
+        wx:for="{{capabilityFilterOptions}}"
+        wx:key="key"
+        class="pill history-pill {{selectedCapabilityFilterKey === item.key ? 'history-pill--active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onCapabilityFilterChange"
+      >
+        {{item.label}}
+      </text>
+    </view>
+  </view>
+
   <view wx:if="{{loading}}" class="section">
     <view class="state-card card">正在搜索相关诊所...</view>
   </view>
@@ -68,7 +86,16 @@
       <view class="result-card__metrics">
         <text class="metric-pill">口碑 {{item.reputationScoreText}}</text>
         <text class="metric-pill metric-pill--value">性价比 {{item.priceScoreText}}</text>
-        <text class="metric-pill metric-pill--soft">可信度 {{item.confidenceText}}</text>
+        <text class="metric-pill metric-pill--soft">信息可靠性 {{item.confidenceText}}</text>
+      </view>
+      <view wx:if="{{item.capabilityHighlights.length > 0}}" class="result-card__capabilities">
+        <text
+          wx:for="{{item.capabilityHighlights}}"
+          wx:key="*this"
+          class="metric-pill"
+        >
+          {{item}}
+        </text>
       </view>
       <view class="result-card__footer">
         <text class="muted">{{item.phone || '暂无电话'}} · {{item.businessHours || '营业时间待补充'}}</text>

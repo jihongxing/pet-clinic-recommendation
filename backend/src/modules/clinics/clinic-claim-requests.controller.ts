@@ -1,4 +1,10 @@
-import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiNotFoundResponse,
@@ -32,7 +38,9 @@ export class ClinicClaimRequestsController {
   @ResponseMessage('success')
   @ApiOperation({ summary: '获取当前用户提交的认领申请列表' })
   @ApiOkResponse({ description: '返回当前用户的认领申请列表' })
-  @ApiUnauthorizedResponse({ description: '未提供或提供了无效的用户 Bearer Token' })
+  @ApiUnauthorizedResponse({
+    description: '未提供或提供了无效的用户 Bearer Token',
+  })
   @READ_RATE_LIMIT
   getMyClaimRequests(
     @CurrentUser() user: AuthenticatedUser,

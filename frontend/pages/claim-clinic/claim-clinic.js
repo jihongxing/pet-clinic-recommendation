@@ -114,7 +114,7 @@ Page({
 
       wx.showModal({
         title: '认领申请已提交',
-        content: `申请单 #${result.id} 已进入审核队列，我们会尽快处理。`,
+        content: `已收到申请，申请编号 #${result.id}。我们会尽快确认并处理。`,
         showCancel: false,
         success: () => {
           wx.redirectTo({

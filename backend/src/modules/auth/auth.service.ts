@@ -389,7 +389,10 @@ export class AuthService {
     const existingAdminUser = await this.adminUserRepository.findOne({
       where: { username: normalizedUsername },
     });
-    const passwordHash = await hash(payload.password?.trim() || 'Admin123456!', 10);
+    const passwordHash = await hash(
+      payload.password?.trim() || 'Admin123456!',
+      10,
+    );
 
     if (existingAdminUser) {
       existingAdminUser.displayName =

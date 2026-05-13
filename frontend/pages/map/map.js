@@ -6,7 +6,7 @@ const DEFAULT_LOCATION = {
   lng: 116.4436,
   city: '北京',
   label: '北京·朝阳区',
-  hint: '已使用北京开发坐标展示地图',
+  hint: '暂时先为你展示北京范围内的诊所',
 };
 
 function isBeijingCoordinate(lat, lng) {
@@ -118,13 +118,13 @@ Page({
 
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '开发种子数据当前仅覆盖北京，已切换到北京默认坐标',
+            hint: '当前先展示北京范围内的诊所',
           });
         },
         fail: () => {
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '定位未开启，已使用北京默认坐标',
+            hint: '定位未开启，先为你展示北京范围内的诊所',
           });
         },
       });

@@ -31,19 +31,19 @@
         <text>{{detail.createdAtText}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-row__label">审核时间</text>
+        <text class="detail-row__label">处理时间</text>
         <text>{{detail.reviewedAtText}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-row__label">证明材料</text>
+        <text class="detail-row__label">身份说明</text>
         <text>{{detail.proofMaterial || '未填写'}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-row__label">审核反馈</text>
-        <text>{{detail.reviewNote || '暂无反馈，等待审核中'}}</text>
+        <text class="detail-row__label">处理结果</text>
+        <text>{{detail.reviewNote || '暂时还在处理中'}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-row__label">申请单号</text>
+        <text class="detail-row__label">申请编号</text>
         <text>#{{detail.id}}</text>
       </view>
     </view>

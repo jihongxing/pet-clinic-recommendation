@@ -7,18 +7,22 @@ const SOURCE_COPY = {
   'index-empty': {
     title: '推荐附近诊所',
     hint: '当前列表没有匹配结果，你可以先把这家诊所推荐进来。',
+    badge: '从附近结果带来的信息',
   },
   'search-empty': {
     title: '推荐搜索结果外的诊所',
     hint: '如果你知道目标诊所，可以先把基本信息提交给我们。',
+    badge: '从搜索结果带来的信息',
   },
   'clinic-detail': {
     title: '补充或纠正诊所信息',
     hint: '你可以补充电话、营业时间，或纠正当前不准确的信息。',
+    badge: '从详情页带来的信息',
   },
   profile: {
     title: '推荐一家诊所',
-    hint: '把你熟悉的诊所提交给我们，后续会进入审核流程。',
+    hint: '把你熟悉的诊所告诉我们，我们会尽快核实处理。',
+    badge: '你已填写的信息',
   },
 };
 
@@ -38,6 +42,14 @@ const SUBMISSION_TYPE_OPTIONS = [
     label: '纠正错误信息',
     helper: '修正错误地址、电话或其他不准确信息。',
   },
+];
+
+const CAPABILITY_GROUP_CONFIG = [
+  { key: 'services', title: '服务项目' },
+  { key: 'specialties', title: '擅长领域' },
+  { key: 'equipment', title: '设备能力' },
+  { key: 'facilities', title: '设施能力' },
+  { key: 'speciesSupported', title: '接诊宠物类型' },
 ];
 
 function getDefaultSubmissionType(source) {
@@ -81,8 +93,9 @@ function buildMatchViewModel(match) {
 Page({
   data: {
     source: 'profile',
+    sourceLabel: '你已填写的信息',
     pageTitle: '推荐一家诊所',
-    pageHint: '把你熟悉的诊所提交给我们，后续会进入审核流程。',
+    pageHint: '把你熟悉的诊所告诉我们，我们会尽快核实处理。',
     submissionTypeOptions: SUBMISSION_TYPE_OPTIONS,
     submissionType: 'new',
     clinicDraft: null,
@@ -93,9 +106,17 @@ Page({
       district: '',
       phone: '',
       businessHours: '',
+      services: [],
+      specialties: [],
+      equipment: [],
+      facilities: [],
+      speciesSupported: [],
+      capabilityNotes: '',
       reason: '',
       photos: [],
     },
+    capabilityGroups: [],
+    loadingCapabilities: false,
     checkingMatches: false,
     hasCheckedMatches: false,
     matchedClinics: [],
@@ -123,6 +144,7 @@ Page({
 
     this.setData({
       source,
+      sourceLabel: sourceCopy.badge,
       pageTitle: sourceCopy.title,
       pageHint: sourceCopy.hint,
       submissionType,
@@ -134,6 +156,12 @@ Page({
         district: clinicDraft.district,
         phone: clinicDraft.phone,
         businessHours: clinicDraft.businessHours,
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        capabilityNotes: '',
         reason:
           source === 'clinic-detail'
             ? '我想补充或纠正这家诊所的现有信息。'
@@ -142,9 +170,36 @@ Page({
       },
     });
 
+    this.fetchCapabilityDefinitions();
+
     wx.setNavigationBarTitle({
       title: sourceCopy.title,
     });
+  },
+
+  async fetchCapabilityDefinitions() {
+    this.setData({
+      loadingCapabilities: true,
+    });
+
+    try {
+      const response = await request({
+        url: '/clinics/capability-definitions',
+        method: 'GET',
+      });
+
+      this.capabilityDefinitions = response || {};
+      this.syncCapabilityGroups();
+    } catch (error) {
+      wx.showToast({
+        title: error.message || '加载可选服务信息失败',
+        icon: 'none',
+      });
+    } finally {
+      this.setData({
+        loadingCapabilities: false,
+      });
+    }
   },
 
   onSubmissionTypeChange(event) {
@@ -175,6 +230,25 @@ Page({
       matchedClinics: [],
       lastMatchCheckKey: '',
     });
+  },
+
+  onCapabilityToggle(event) {
+    const { group, code } = event.currentTarget.dataset;
+
+    if (!group || !code) {
+      return;
+    }
+
+    const current = Array.isArray(this.data.form[group]) ? this.data.form[group] : [];
+    const exists = current.includes(code);
+    const next = exists
+      ? current.filter((item) => item !== code)
+      : current.concat(code);
+
+    this.setData({
+      [`form.${group}`]: next,
+    });
+    this.syncCapabilityGroups();
   },
 
   async choosePhotos() {
@@ -344,6 +418,12 @@ Page({
       district: form.district.trim(),
       phone: form.phone.trim(),
       businessHours: form.businessHours.trim(),
+      services: form.services,
+      specialties: form.specialties,
+      equipment: form.equipment,
+      facilities: form.facilities,
+      speciesSupported: form.speciesSupported,
+      capabilityNotes: form.capabilityNotes.trim(),
       reason: form.reason.trim(),
       photos: form.photos,
     };
@@ -353,6 +433,28 @@ Page({
     }
 
     return payload;
+  },
+
+  syncCapabilityGroups() {
+    const groupedDefinitions = this.capabilityDefinitions || {};
+    const capabilityGroups = CAPABILITY_GROUP_CONFIG.map((group) => {
+      const options = Array.isArray(groupedDefinitions[group.key])
+        ? groupedDefinitions[group.key]
+        : [];
+      const selectedCodes = new Set(this.data.form[group.key] || []);
+
+      return {
+        ...group,
+        options: options.map((item) => ({
+          ...item,
+          selected: selectedCodes.has(item.code),
+        })),
+      };
+    });
+
+    this.setData({
+      capabilityGroups,
+    });
   },
 
   buildMatchQuery() {
@@ -412,12 +514,12 @@ Page({
 
       if (matchedClinics.length > 0) {
         wx.showToast({
-          title: `发现 ${matchedClinics.length} 条疑似重复`,
+          title: `发现 ${matchedClinics.length} 家相似诊所`,
           icon: 'none',
         });
       } else {
         wx.showToast({
-          title: '未发现明显重复',
+        title: '暂时没发现重复',
           icon: 'success',
         });
       }
@@ -425,7 +527,7 @@ Page({
       return matchedClinics;
     } catch (error) {
       wx.showToast({
-        title: error.message || '检查重复失败',
+        title: error.message || '检查是否重复失败',
         icon: 'none',
       });
       return null;
@@ -491,15 +593,15 @@ Page({
         if (matchedClinics.length > 0) {
           wx.showModal({
             title: '先确认是否重复',
-            content: '系统找到了可能重复的诊所，建议先查看候选项；如果确认不是同一家，再次点击提交即可继续。',
+            content: '我们找到了几家可能是同一家的诊所，建议先看一下；如果确认不是同一家，再次点击提交即可继续。',
             showCancel: false,
           });
           return;
         }
       } else if (this.data.matchedClinics.length > 0) {
         wx.showModal({
-          title: '发现可能重复',
-          content: '页面下方已有候选诊所，请确认后再决定是否继续提交新推荐。',
+          title: '发现相似诊所',
+          content: '页面下方有几家相似诊所，请先确认，再决定是否继续提交。',
           confirmText: '继续提交',
           cancelText: '先查看',
           success: async (result) => {
@@ -542,7 +644,7 @@ Page({
       setTimeout(() => {
         wx.showModal({
           title: '已提交',
-          content: `推荐单 #${result.id} 已进入审核队列。`,
+          content: `已收到你的提交，申请编号 #${result.id}。我们会尽快核实处理。`,
           showCancel: false,
           success: () => {
             const pages = getCurrentPages();

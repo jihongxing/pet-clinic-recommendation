@@ -1,7 +1,9 @@
 import { AdminUserEntity } from './admin-user.entity';
 import { AbnormalBehaviorEntity } from './abnormal-behavior.entity';
+import { CapabilityDefinitionEntity } from './capability-definition.entity';
 import { ClinicEntity } from './clinic.entity';
 import { ClinicAccountEntity } from './clinic-account.entity';
+import { ClinicCapabilityEntity } from './clinic-capability.entity';
 import { ClinicClaimRequestEntity } from './clinic-claim-request.entity';
 import { ClinicSubmissionReviewLogEntity } from './clinic-submission-review-log.entity';
 import { ClinicSubmissionEntity } from './clinic-submission.entity';
@@ -20,7 +22,9 @@ import { UserReferralEntity } from './user-referral.entity';
 
 export * from './admin-user.entity';
 export * from './abnormal-behavior.entity';
+export * from './capability-definition.entity';
 export * from './clinic-account.entity';
+export * from './clinic-capability.entity';
 export * from './clinic-claim-request.entity';
 export * from './clinic-submission-review-log.entity';
 export * from './clinic-submission.entity';
@@ -45,6 +49,8 @@ export const DATABASE_ENTITIES = [
   AdminUserEntity,
   UserEntity,
   ClinicEntity,
+  CapabilityDefinitionEntity,
+  ClinicCapabilityEntity,
   ClinicAccountEntity,
   ClinicClaimRequestEntity,
   ClinicSubmissionReviewLogEntity,

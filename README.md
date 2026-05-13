@@ -33,6 +33,7 @@
 - [本地启动](#-本地启动)
 - [真机测试清单](docs/真机测试清单.md)
 - [Staging 部署](#staging-部署)
+- [发布检查清单](docs/发布检查清单.md)
 - [域名与 HTTPS](docs/域名与HTTPS配置说明.md)
 - [数据库备份与恢复](docs/数据库备份与恢复说明.md)
 - [上线回滚方案](docs/上线回滚方案.md)
@@ -537,6 +538,19 @@ cd backend && npm run build
 cd ../frontend && npm run lint
 ```
 
+如果要按当前仓库的发布门禁完整自检，建议执行：
+
+```bash
+cd backend && npm run check:release
+cd ../frontend && npm run check
+```
+
+说明：
+
+- `backend:check:release` 会顺序执行 `lint:check`、单元测试、构建、migration 和三类种子校验
+- `frontend:check` 当前会执行小程序前端 lint
+- GitHub Actions 已同步接入同一套门禁，工作流文件见 `.github/workflows/quality-gate.yml`
+
 ---
 
 ## 📄 许可证
@@ -550,6 +564,7 @@ cd ../frontend && npm run lint
 ## 🗂️ 发布资料
 
 - [GitHub仓库发布说明](docs/GitHub仓库发布说明.md)
+- [发布检查清单](docs/发布检查清单.md)
 - [小程序提审前说明](docs/小程序提审前说明.md)
 - [真机测试清单](docs/真机测试清单.md)
 - [测试账号与种子数据说明](docs/测试账号与种子数据说明.md)

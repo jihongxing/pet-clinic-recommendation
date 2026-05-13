@@ -2,7 +2,7 @@
   <view class="card intro-card">
     <view class="section-title">申请认领诊所</view>
     <text class="muted intro-card__hint">
-      认领通过后，诊所负责人才能维护资料并对标签回应。请填写真实联系人和证明材料。
+      认领通过后，诊所负责人就可以维护资料并回应大家的评价。请填写真实联系人信息和方便我们确认身份的说明。
     </text>
   </view>
 
@@ -54,13 +54,13 @@
     </view>
 
     <view class="form-field">
-      <text class="form-field__label">证明材料 / 补充说明</text>
+      <text class="form-field__label">方便我们确认身份的说明</text>
       <textarea
         class="form-field__textarea"
         data-field="proofMaterial"
         value="{{form.proofMaterial}}"
         maxlength="2000"
-        placeholder="请填写营业执照、门头照片、工作证或其他可核验材料说明"
+        placeholder="例如营业执照、门头照片、工作证，或其他能帮助我们确认身份的信息"
         bindinput="onFieldInput"
       />
     </view>

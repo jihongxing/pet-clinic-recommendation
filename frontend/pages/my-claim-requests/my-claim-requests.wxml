@@ -5,7 +5,7 @@
 
   <view wx:elif="{{claimRequests.length === 0}}" class="card state-card">
     <text class="state-card__title">你还没有认领申请</text>
-    <text class="muted">从诊所详情页点击“申请认领”后，会在这里查看审核状态和结果。</text>
+    <text class="muted">从诊所详情页点击“申请认领”后，会在这里查看处理进度和结果。</text>
   </view>
 
   <view wx:else class="claim-list">
@@ -32,7 +32,7 @@
       </view>
 
       <view wx:if="{{item.reviewNoteText}}" class="claim-card__section">
-        <text class="claim-card__label">审核反馈</text>
+        <text class="claim-card__label">处理结果</text>
         <text class="claim-card__value claim-card__review-note">{{item.reviewNoteText}}</text>
       </view>
 

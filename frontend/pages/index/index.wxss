@@ -186,6 +186,13 @@
   margin: 20rpx 0;
 }
 
+.clinic-card__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
 .clinic-pill {
   background: #fff3ed;
 }
@@ -193,6 +200,11 @@
 .clinic-pill--active {
   background: #d86b4a;
   color: #ffffff;
+}
+
+.clinic-pill--capability {
+  background: #eef8f2;
+  color: #2f8e63;
 }
 
 .clinic-card__metrics {

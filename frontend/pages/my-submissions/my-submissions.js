@@ -3,7 +3,7 @@ const { ensureLogin } = require('../../utils/auth');
 
 const STATUS_OPTIONS = [
   { value: '', label: '全部' },
-  { value: 'pending_review', label: '待审核' },
+  { value: 'pending_review', label: '处理中' },
   { value: 'need_info', label: '待补充' },
   { value: 'approved_new', label: '已收录' },
   { value: 'merged', label: '已合并' },
@@ -12,7 +12,7 @@ const STATUS_OPTIONS = [
 
 const STATUS_META = {
   pending_review: {
-    label: '待审核',
+    label: '处理中',
     badgeClass: 'submission-card__status--pending',
   },
   need_info: {
@@ -28,7 +28,7 @@ const STATUS_META = {
     badgeClass: 'submission-card__status--success',
   },
   rejected: {
-    label: '未通过',
+    label: '暂未采纳',
     badgeClass: 'submission-card__status--rejected',
   },
 };
@@ -160,7 +160,7 @@ Page({
       });
     } catch (error) {
       wx.showToast({
-        title: error.message || '加载推荐记录失败',
+        title: error.message || '加载提交内容失败',
         icon: 'none',
       });
     } finally {

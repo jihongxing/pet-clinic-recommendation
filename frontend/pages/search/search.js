@@ -8,8 +8,16 @@ const DEFAULT_LOCATION = {
   lat: 39.9219,
   lng: 116.4436,
   city: '北京',
-  hint: '已按北京数据范围搜索',
+  hint: '当前先展示北京范围内的搜索结果',
 };
+
+const CAPABILITY_FILTER_OPTIONS = [
+  { key: 'all', label: '全部能力', request: {} },
+  { key: 'cat', label: '猫专科', request: { specialtyCodes: ['sp_cat'] } },
+  { key: 'emergency', label: '急诊能力', request: { serviceCodes: ['srv_emergency'] } },
+  { key: 'ultrasound', label: '有B超', request: { equipmentCodes: ['eq_ultrasound'] } },
+  { key: 'inpatient', label: '可住院', request: { facilityCodes: ['fc_inpatient'] } },
+];
 
 function isBeijingCoordinate(lat, lng) {
   return lat >= 39 && lat <= 41 && lng >= 115.7 && lng <= 117.4;
@@ -27,6 +35,9 @@ function buildSearchResultViewModel(clinic) {
     reputationScoreText: formatScore(clinic.reputationScore),
     priceScoreText: formatScore(clinic.priceScore),
     confidenceText: `${Math.round(Number(clinic.confidenceFactor || 0) * 100)}%`,
+    capabilityHighlights: Array.isArray(clinic.capabilityHighlights)
+      ? clinic.capabilityHighlights
+      : [],
   };
 }
 
@@ -51,6 +62,8 @@ Page({
     loadingMore: false,
     searchedKeyword: '',
     locationHint: DEFAULT_LOCATION.hint,
+    capabilityFilterOptions: CAPABILITY_FILTER_OPTIONS,
+    selectedCapabilityFilterKey: 'all',
   },
 
   onLoad() {
@@ -115,13 +128,13 @@ Page({
 
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '开发种子数据当前仅覆盖北京，已切换到北京范围搜索',
+            hint: '当前先展示北京范围内的搜索结果',
           });
         },
         fail: () => {
           resolve({
             ...DEFAULT_LOCATION,
-            hint: '定位未开启，已使用北京范围搜索',
+            hint: '定位未开启，先为你展示北京范围内的结果',
           });
         },
       });
@@ -192,6 +205,10 @@ Page({
     }
 
     const nextPage = reset ? 1 : this.data.page + 1;
+    const selectedCapabilityFilter =
+      CAPABILITY_FILTER_OPTIONS.find(
+        (item) => item.key === this.data.selectedCapabilityFilterKey,
+      ) || CAPABILITY_FILTER_OPTIONS[0];
 
     try {
       const response = await request({
@@ -204,6 +221,18 @@ Page({
           lng: this.locationState ? this.locationState.lng : DEFAULT_LOCATION.lng,
           page: nextPage,
           pageSize: this.data.pageSize,
+          ...(selectedCapabilityFilter.request.serviceCodes
+            ? { serviceCodes: selectedCapabilityFilter.request.serviceCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.specialtyCodes
+            ? { specialtyCodes: selectedCapabilityFilter.request.specialtyCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.equipmentCodes
+            ? { equipmentCodes: selectedCapabilityFilter.request.equipmentCodes.join(',') }
+            : {}),
+          ...(selectedCapabilityFilter.request.facilityCodes
+            ? { facilityCodes: selectedCapabilityFilter.request.facilityCodes.join(',') }
+            : {}),
         },
       });
 
@@ -272,6 +301,24 @@ Page({
     this.searchClinics(this.data.keyword || this.data.searchedKeyword, {
       reset: false,
     });
+  },
+
+  onCapabilityFilterChange(event) {
+    const { key } = event.currentTarget.dataset;
+
+    if (!key || key === this.data.selectedCapabilityFilterKey) {
+      return;
+    }
+
+    this.setData({
+      selectedCapabilityFilterKey: key,
+    });
+
+    if ((this.data.keyword || this.data.searchedKeyword).trim()) {
+      this.searchClinics(this.data.keyword || this.data.searchedKeyword, {
+        reset: true,
+      });
+    }
   },
 
   goToDetail(event) {

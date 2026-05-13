@@ -1,4 +1,12 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -30,7 +38,9 @@ export class ClinicAuthController {
   @ApiOperation({ summary: '诊所后台账号密码登录并返回诊所 JWT' })
   @ApiBody({ type: ClinicLoginDto })
   @ApiOkResponse({ description: '返回诊所 Bearer Token 与诊所账号信息' })
-  @ApiUnauthorizedResponse({ description: '用户名或密码错误，或诊所账号已停用' })
+  @ApiUnauthorizedResponse({
+    description: '用户名或密码错误，或诊所账号已停用',
+  })
   @LOGIN_RATE_LIMIT
   login(@Body() payload: ClinicLoginDto) {
     return this.authService.loginClinic(payload);
@@ -42,7 +52,9 @@ export class ClinicAuthController {
   @ResponseMessage('success')
   @ApiOperation({ summary: '获取当前登录诊所账号信息' })
   @ApiOkResponse({ description: '返回当前诊所账号身份信息' })
-  @ApiUnauthorizedResponse({ description: '未提供或提供了无效的诊所 Bearer Token' })
+  @ApiUnauthorizedResponse({
+    description: '未提供或提供了无效的诊所 Bearer Token',
+  })
   @READ_RATE_LIMIT
   getSession(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getClinicSession(user.clinicAccountId!);

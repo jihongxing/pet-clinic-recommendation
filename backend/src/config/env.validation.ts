@@ -9,6 +9,12 @@ import {
   validateSync,
 } from 'class-validator';
 
+const DEFAULT_JWT_SECRET = 'dev_only_change_me';
+const DEFAULT_DB_USERNAME = 'postgres';
+const DEFAULT_DB_PASSWORD = 'postgres_password';
+const DEFAULT_DB_HOST = '127.0.0.1';
+const DEFAULT_REDIS_HOST = '127.0.0.1';
+
 class EnvironmentVariables {
   @IsOptional()
   @IsString()
@@ -124,5 +130,67 @@ export function validate(config: Record<string, unknown>) {
     throw new Error(errors.toString());
   }
 
+  enforceProductionSafety(validatedConfig);
+
   return validatedConfig;
+}
+
+function enforceProductionSafety(config: EnvironmentVariables) {
+  const isProduction = config.NODE_ENV === 'production';
+
+  if (!isProduction) {
+    return;
+  }
+
+  const errors: string[] = [];
+
+  if (!config.JWT_SECRET || config.JWT_SECRET === DEFAULT_JWT_SECRET) {
+    errors.push('JWT_SECRET must be set to a non-default value in production');
+  }
+
+  if (!config.DB_HOST) {
+    errors.push('DB_HOST is required in production');
+  }
+
+  if (!config.DB_USERNAME || config.DB_USERNAME === DEFAULT_DB_USERNAME) {
+    errors.push(
+      'DB_USERNAME must be set explicitly and cannot use the default value in production',
+    );
+  }
+
+  if (!config.DB_PASSWORD || config.DB_PASSWORD === DEFAULT_DB_PASSWORD) {
+    errors.push(
+      'DB_PASSWORD must be set explicitly and cannot use the default value in production',
+    );
+  }
+
+  if (!config.DB_DATABASE) {
+    errors.push('DB_DATABASE is required in production');
+  }
+
+  if (config.DB_HOST === DEFAULT_DB_HOST) {
+    errors.push(
+      'DB_HOST cannot remain 127.0.0.1 in production unless you intentionally override this safeguard',
+    );
+  }
+
+  if (config.REDIS_HOST === DEFAULT_REDIS_HOST) {
+    errors.push(
+      'REDIS_HOST cannot remain 127.0.0.1 in production unless you intentionally override this safeguard',
+    );
+  }
+
+  if (!config.WECHAT_APPID) {
+    errors.push('WECHAT_APPID is required in production');
+  }
+
+  if (!config.WECHAT_SECRET) {
+    errors.push('WECHAT_SECRET is required in production');
+  }
+
+  if (errors.length > 0) {
+    throw new Error(
+      `Invalid production environment configuration:\n- ${errors.join('\n- ')}`,
+    );
+  }
 }

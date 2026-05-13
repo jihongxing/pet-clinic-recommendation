@@ -164,6 +164,13 @@ async function ensurePendingRecommendationSubmission(
     existing.phone = '13800001111';
     existing.businessHours = '10:00-20:00';
     existing.photosJson = ['https://example.com/staging/submission-cover.jpg'];
+    existing.servicesJson = ['srv_outpatient', 'srv_emergency'];
+    existing.specialtiesJson = ['sp_cat'];
+    existing.equipmentJson = ['eq_ultrasound'];
+    existing.facilitiesJson = ['fc_inpatient'];
+    existing.speciesSupportedJson = ['species_cat', 'species_dog'];
+    existing.capabilityNotes =
+      '用于 staging 验收能力审核链路，主打猫科、急诊和住院。';
     existing.reason = reason;
     existing.status = ClinicSubmissionStatus.PendingReview;
     existing.matchedClinicId = null;
@@ -187,6 +194,12 @@ async function ensurePendingRecommendationSubmission(
     phone: '13800001111',
     businessHours: '10:00-20:00',
     photosJson: ['https://example.com/staging/submission-cover.jpg'],
+    servicesJson: ['srv_outpatient', 'srv_emergency'],
+    specialtiesJson: ['sp_cat'],
+    equipmentJson: ['eq_ultrasound'],
+    facilitiesJson: ['fc_inpatient'],
+    speciesSupportedJson: ['species_cat', 'species_dog'],
+    capabilityNotes: '用于 staging 验收能力审核链路，主打猫科、急诊和住院。',
     reason,
     status: ClinicSubmissionStatus.PendingReview,
     matchedClinicId: null,
@@ -205,7 +218,8 @@ async function ensurePendingClaimScenario(
   submitterUserId: string,
 ) {
   const clinicName = '【Staging验收】待认领诊所样例';
-  const claimReason = '用于 staging 验收认领审核链路，请审核通过并生成诊所账号。';
+  const claimReason =
+    '用于 staging 验收认领审核链路，请审核通过并生成诊所账号。';
 
   let clinic = await clinicRepository.findOne({
     where: {
@@ -345,7 +359,9 @@ function printSummary(summary: StagingPreparationSummary) {
   console.log(
     '2. Review recommendation submission and approve it as approved_new.',
   );
-  console.log('3. Review claim request and approve it to generate clinic account.');
+  console.log(
+    '3. Review claim request and approve it to generate clinic account.',
+  );
   console.log(
     '4. Log in via /api/v1/clinic/login using username clinic_admin_<clinicId> and password Clinic@<clinicId>888.',
   );
@@ -360,11 +376,14 @@ async function main() {
     const adminUserRepository = dataSource.getRepository(AdminUserEntity);
     const userRepository = dataSource.getRepository(UserEntity);
     const clinicRepository = dataSource.getRepository(ClinicEntity);
-    const clinicAccountRepository = dataSource.getRepository(ClinicAccountEntity);
-    const clinicSubmissionRepository =
-      dataSource.getRepository(ClinicSubmissionEntity);
-    const clinicClaimRequestRepository =
-      dataSource.getRepository(ClinicClaimRequestEntity);
+    const clinicAccountRepository =
+      dataSource.getRepository(ClinicAccountEntity);
+    const clinicSubmissionRepository = dataSource.getRepository(
+      ClinicSubmissionEntity,
+    );
+    const clinicClaimRequestRepository = dataSource.getRepository(
+      ClinicClaimRequestEntity,
+    );
 
     const adminUsername = getRequiredEnv(
       'STAGING_REVIEW_ADMIN_USERNAME',

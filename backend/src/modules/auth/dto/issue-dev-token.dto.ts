@@ -95,7 +95,8 @@ export class IssueDevTokenDto {
   displayName?: string;
 
   @ApiPropertyOptional({
-    description: '开发态管理员密码；仅 actorType=admin 时用于创建或重置登录密码',
+    description:
+      '开发态管理员密码；仅 actorType=admin 时用于创建或重置登录密码',
     example: 'Admin123456!',
   })
   @IsOptional()

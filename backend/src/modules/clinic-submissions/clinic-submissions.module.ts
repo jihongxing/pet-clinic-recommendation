@@ -8,12 +8,14 @@ import {
   ClinicSubmissionEntity,
   UserEntity,
 } from '../../database/entities';
+import { ClinicsModule } from '../clinics/clinics.module';
 import { AdminClinicSubmissionsController } from './admin-clinic-submissions.controller';
 import { ClinicSubmissionsController } from './clinic-submissions.controller';
 import { ClinicSubmissionsService } from './clinic-submissions.service';
 
 @Module({
   imports: [
+    ClinicsModule,
     TypeOrmModule.forFeature([
       AdminUserEntity,
       ClinicSubmissionEntity,
@@ -22,10 +24,7 @@ import { ClinicSubmissionsService } from './clinic-submissions.service';
       UserEntity,
     ]),
   ],
-  controllers: [
-    ClinicSubmissionsController,
-    AdminClinicSubmissionsController,
-  ],
+  controllers: [ClinicSubmissionsController, AdminClinicSubmissionsController],
   providers: [ClinicSubmissionsService],
 })
 export class ClinicSubmissionsModule {}

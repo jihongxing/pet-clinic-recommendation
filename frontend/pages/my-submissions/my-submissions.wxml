@@ -14,17 +14,17 @@
   </scroll-view>
 
   <view wx:if="{{loading}}" class="card state-card">
-    正在加载我的推荐...
+    正在加载我的提交...
   </view>
 
   <view wx:elif="{{submissions.length === 0}}" class="card state-card">
-    <text class="state-card__title">你还没有推荐记录</text>
-    <text class="muted">推荐新诊所、补充信息或纠错后，会在这里看到审核进度。</text>
+    <text class="state-card__title">你还没有提交过内容</text>
+    <text class="muted">推荐新诊所、补充信息或纠错后，会在这里看到处理进度。</text>
     <button class="state-card__button" bindtap="createSubmission">去推荐诊所</button>
   </view>
 
   <view wx:else class="submission-list">
-    <view class="summary-text muted">共 {{total}} 条推荐记录</view>
+    <view class="summary-text muted">共 {{total}} 条提交内容</view>
 
     <view wx:for="{{submissions}}" wx:key="id" class="card submission-card">
       <view class="submission-card__header">
@@ -36,7 +36,7 @@
       </view>
 
       <view class="submission-card__section">
-        <text class="submission-card__label">提交类型</text>
+        <text class="submission-card__label">这次你提交的内容</text>
         <text class="submission-card__value">{{item.submissionTypeLabel}}</text>
       </view>
 
@@ -46,7 +46,7 @@
       </view>
 
       <view wx:if="{{item.reviewNoteText}}" class="submission-card__section">
-        <text class="submission-card__label">审核反馈</text>
+        <text class="submission-card__label">我们的回复</text>
         <text class="submission-card__value submission-card__review-note">{{item.reviewNoteText}}</text>
       </view>
 

@@ -13,6 +13,8 @@ import {
   Min,
 } from 'class-validator';
 
+import { ToCapabilityCodeArray } from './shared-capability.dto';
+
 export const CLINIC_NEARBY_RADIUS_OPTIONS = [3000, 10000, 20000] as const;
 export const CLINIC_SORT_TYPES = ['reputation', 'price'] as const;
 
@@ -90,6 +92,50 @@ export class GetNearbyClinicsQueryDto {
   @IsArray()
   @ArrayMaxSize(20)
   tagIds?: number[];
+
+  @ApiPropertyOptional({
+    description: '服务筛选 code，逗号分隔',
+    example: 'srv_emergency',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  serviceCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '专长筛选 code，逗号分隔',
+    example: 'sp_cat',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  specialtyCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '设备筛选 code，逗号分隔',
+    example: 'eq_ultrasound',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  equipmentCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '设施筛选 code，逗号分隔',
+    example: 'fc_inpatient',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  facilityCodes?: string[];
 
   @ApiProperty({
     description: '城市名称',

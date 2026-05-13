@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 
 import { ClinicSubmissionType } from '../../../database/entities';
+import { ClinicSubmissionCapabilityFieldsDto } from './capability-fields.dto';
 import { ToNumber, ToStringArray } from './shared.dto';
 
 const CLINIC_SUBMISSION_TYPE_OPTIONS = [
@@ -22,7 +23,7 @@ const CLINIC_SUBMISSION_TYPE_OPTIONS = [
   ClinicSubmissionType.Correction,
 ] as const;
 
-export class CreateClinicSubmissionDto {
+export class CreateClinicSubmissionDto extends ClinicSubmissionCapabilityFieldsDto {
   @ApiProperty({
     description: '推荐类型：新诊所 / 补充信息 / 纠错',
     enum: CLINIC_SUBMISSION_TYPE_OPTIONS,

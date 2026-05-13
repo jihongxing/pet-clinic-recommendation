@@ -4,6 +4,8 @@ import { DataSource } from 'typeorm';
 
 import { RedisService } from '../redis/redis.service';
 
+type DependencyStatus = { status: 'up' } | { status: 'down'; message: string };
+
 @Injectable()
 export class HealthService {
   constructor(
@@ -13,18 +15,16 @@ export class HealthService {
   ) {}
 
   async getHealth() {
-    const [app, database, redis] = await Promise.all([
-      this.checkApp(),
+    const [database, redis] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
     ]);
+    const app = this.getAppStatus();
+    const isReady = this.isDependencyUp(database) && this.isDependencyUp(redis);
 
     return {
-      status:
-        app.status === 'up' && database.status === 'up' && redis.status === 'up'
-          ? 'ok'
-          : 'degraded',
-      timestamp: new Date().toISOString(),
+      status: isReady ? 'ok' : 'degraded',
+      timestamp: this.getTimestamp(),
       dependencies: {
         app,
         database,
@@ -33,7 +33,32 @@ export class HealthService {
     };
   }
 
-  private async checkApp() {
+  async getLiveness() {
+    return {
+      status: 'ok' as const,
+      timestamp: this.getTimestamp(),
+      app: this.getAppStatus(),
+    };
+  }
+
+  async getReadiness() {
+    const [database, redis] = await Promise.all([
+      this.checkDatabase(),
+      this.checkRedis(),
+    ]);
+    const isReady = this.isDependencyUp(database) && this.isDependencyUp(redis);
+
+    return {
+      status: isReady ? ('ready' as const) : ('not_ready' as const),
+      timestamp: this.getTimestamp(),
+      dependencies: {
+        database,
+        redis,
+      },
+    };
+  }
+
+  private getAppStatus() {
     return {
       status: 'up' as const,
       name:
@@ -44,7 +69,7 @@ export class HealthService {
     };
   }
 
-  private async checkDatabase() {
+  private async checkDatabase(): Promise<DependencyStatus> {
     try {
       await this.dataSource.query('SELECT 1');
 
@@ -58,12 +83,19 @@ export class HealthService {
     }
   }
 
-  private async checkRedis() {
+  private async checkRedis(): Promise<DependencyStatus> {
     try {
       const response = await this.redisService.ping();
 
+      if (response !== 'PONG') {
+        return {
+          status: 'down' as const,
+          message: `Unexpected redis ping response: ${response}`,
+        };
+      }
+
       return {
-        status: response === 'PONG' ? ('up' as const) : ('down' as const),
+        status: 'up' as const,
       };
     } catch (error) {
       return {
@@ -71,5 +103,13 @@ export class HealthService {
         message: error instanceof Error ? error.message : 'Unknown redis error',
       };
     }
+  }
+
+  private isDependencyUp(dependency: DependencyStatus) {
+    return dependency.status === 'up';
+  }
+
+  private getTimestamp() {
+    return new Date().toISOString();
   }
 }

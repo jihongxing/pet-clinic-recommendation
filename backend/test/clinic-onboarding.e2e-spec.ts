@@ -749,9 +749,9 @@ describe('Clinic onboarding flow (e2e)', () => {
       .expect(200);
 
     expect(adminDetailResponse.body.data.id).toBe(1001);
-    expect(clinicSubmissionsService.getAdminSubmissionDetail).toHaveBeenCalledWith(
-      1001,
-    );
+    expect(
+      clinicSubmissionsService.getAdminSubmissionDetail,
+    ).toHaveBeenCalledWith(1001);
 
     const reviewSubmissionResponse = await request(app.getHttpServer())
       .post('/api/v1/admin/clinic-submissions/1001/review')

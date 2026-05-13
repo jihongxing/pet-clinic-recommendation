@@ -15,6 +15,7 @@ import {
 import { AuthActorType } from '../auth/interfaces/jwt-payload.interface';
 import { RedisService } from '../redis/redis.service';
 import { ClinicsService } from './clinics.service';
+import { ClinicCapabilityProfileService } from './services/clinic-capability-profile.service';
 
 describe('ClinicsService', () => {
   let service: ClinicsService;
@@ -40,6 +41,16 @@ describe('ClinicsService', () => {
     save: jest.Mock;
   };
   let tagRepository: { findOne: jest.Mock };
+  let clinicCapabilityProfileService: {
+    getClinicCapabilities: jest.Mock;
+    getClinicCapabilitiesMap: jest.Mock;
+    getCapabilityDefinitions: jest.Mock;
+    listCapabilityDefinitionsForAdmin: jest.Mock;
+    createCapabilityDefinition: jest.Mock;
+    updateCapabilityDefinition: jest.Mock;
+    deleteCapabilityDefinition: jest.Mock;
+    replaceClinicCapabilities: jest.Mock;
+  };
 
   beforeEach(async () => {
     dataSource = {
@@ -76,6 +87,23 @@ describe('ClinicsService', () => {
     tagRepository = {
       findOne: jest.fn(),
     };
+    clinicCapabilityProfileService = {
+      getClinicCapabilities: jest.fn().mockResolvedValue({
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        highlights: [],
+      }),
+      getClinicCapabilitiesMap: jest.fn().mockResolvedValue(new Map()),
+      getCapabilityDefinitions: jest.fn(),
+      listCapabilityDefinitionsForAdmin: jest.fn(),
+      createCapabilityDefinition: jest.fn(),
+      updateCapabilityDefinition: jest.fn(),
+      deleteCapabilityDefinition: jest.fn(),
+      replaceClinicCapabilities: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -87,6 +115,10 @@ describe('ClinicsService', () => {
         {
           provide: RedisService,
           useValue: redisService,
+        },
+        {
+          provide: ClinicCapabilityProfileService,
+          useValue: clinicCapabilityProfileService,
         },
         {
           provide: getRepositoryToken(ClinicEntity),
@@ -182,6 +214,7 @@ describe('ClinicsService', () => {
           priceScore: 78.3,
           confidenceFactor: 0.85,
           isClaimed: false,
+          capabilityHighlights: [],
         },
       ],
       total: 1,
@@ -224,6 +257,10 @@ describe('ClinicsService', () => {
           businessHours: '09:00-21:00',
           city: '北京',
           district: '朝阳区',
+          summary: null,
+          coverPhotoUrl: null,
+          galleryPhotosJson: [],
+          capabilityProfileStatus: 'verified',
           trustScore: 85.5,
           valueScore: 78.3,
           experienceScore: 82.1,
@@ -273,6 +310,10 @@ describe('ClinicsService', () => {
       businessHours: '09:00-21:00',
       city: '北京',
       district: '朝阳区',
+      summary: null,
+      coverPhotoUrl: null,
+      galleryPhotos: [],
+      capabilityProfileStatus: 'verified',
       scores: {
         trust: 85.5,
         value: 78.3,
@@ -304,6 +345,14 @@ describe('ClinicsService', () => {
             displayWeight: 1,
           },
         ],
+      },
+      capabilities: {
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        highlights: [],
       },
       isClaimed: false,
     });
@@ -781,6 +830,10 @@ describe('ClinicsService', () => {
         businessHours: '09:00-21:00',
         city: '北京',
         district: '朝阳区',
+        summary: null,
+        coverPhotoUrl: null,
+        galleryPhotos: [],
+        capabilityProfileStatus: 'verified',
         scores: {
           trust: 85.5,
           value: 78.3,
@@ -792,6 +845,14 @@ describe('ClinicsService', () => {
           confidenceFactor: 0.85,
         },
         tags: {},
+        capabilities: {
+          services: [],
+          specialties: [],
+          equipment: [],
+          facilities: [],
+          speciesSupported: [],
+          highlights: [],
+        },
         isClaimed: false,
       }),
     );
@@ -813,6 +874,10 @@ describe('ClinicsService', () => {
       businessHours: '09:00-21:00',
       city: '北京',
       district: '朝阳区',
+      summary: null,
+      coverPhotoUrl: null,
+      galleryPhotos: [],
+      capabilityProfileStatus: 'verified',
       scores: {
         trust: 85.5,
         value: 78.3,
@@ -824,6 +889,14 @@ describe('ClinicsService', () => {
         confidenceFactor: 0.85,
       },
       tags: {},
+      capabilities: {
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        highlights: [],
+      },
       isClaimed: false,
     });
 
@@ -912,6 +985,7 @@ describe('ClinicsService', () => {
           totalTagCount: 56,
           totalUsers: 32,
           isClaimed: false,
+          capabilityHighlights: [],
         },
       ],
       total: 1,
@@ -920,10 +994,10 @@ describe('ClinicsService', () => {
     });
 
     expect(redisService.get).toHaveBeenCalledWith(
-      'clinics:nearby:%E5%8C%97%E4%BA%AC:39.907500:116.457400:3000:reputation:1:20:all',
+      'clinics:nearby:%E5%8C%97%E4%BA%AC:39.907500:116.457400:3000:reputation:1:20:all:all-services:all-specialties:all-equipment:all-facilities',
     );
     expect(redisService.set).toHaveBeenCalledWith(
-      'clinics:nearby:%E5%8C%97%E4%BA%AC:39.907500:116.457400:3000:reputation:1:20:all',
+      'clinics:nearby:%E5%8C%97%E4%BA%AC:39.907500:116.457400:3000:reputation:1:20:all:all-services:all-specialties:all-equipment:all-facilities',
       expect.any(String),
       300,
     );
@@ -973,6 +1047,7 @@ describe('ClinicsService', () => {
             totalTagCount: 0,
             totalUsers: 0,
             isClaimed: false,
+            capabilityHighlights: [],
           },
         ],
         total: 1,
@@ -1009,6 +1084,7 @@ describe('ClinicsService', () => {
           totalTagCount: 0,
           totalUsers: 0,
           isClaimed: false,
+          capabilityHighlights: [],
         },
       ],
       total: 1,

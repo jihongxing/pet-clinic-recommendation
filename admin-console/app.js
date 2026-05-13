@@ -36,6 +36,10 @@ const state = {
   claimQueue: [],
   selectedClaimRequestId: null,
   currentClaimDetail: null,
+  capabilityDefinitions: [],
+  managedClinicId: null,
+  managedClinicCapabilities: null,
+  capabilityDraftItems: [],
 };
 
 const refs = {};
@@ -61,6 +65,8 @@ function cacheRefs() {
   refs.claimsDashboard = document.getElementById('claimsDashboard');
   refs.submissionsViewButton = document.getElementById('submissionsViewButton');
   refs.claimsViewButton = document.getElementById('claimsViewButton');
+  refs.capabilitiesViewButton = document.getElementById('capabilitiesViewButton');
+  refs.dictionaryViewButton = document.getElementById('dictionaryViewButton');
   refs.loginForm = document.getElementById('loginForm');
   refs.devTokenForm = document.getElementById('devTokenForm');
   refs.sessionSummary = document.getElementById('sessionSummary');
@@ -89,6 +95,20 @@ function cacheRefs() {
   refs.claimReviewActionInput = document.getElementById('claimReviewActionInput');
   refs.claimReviewNoteInput = document.getElementById('claimReviewNoteInput');
   refs.submitClaimReviewButton = document.getElementById('submitClaimReviewButton');
+  refs.capabilitiesDashboard = document.getElementById('capabilitiesDashboard');
+  refs.dictionaryDashboard = document.getElementById('dictionaryDashboard');
+  refs.capabilitySearchForm = document.getElementById('capabilitySearchForm');
+  refs.capabilityClinicIdInput = document.getElementById('capabilityClinicIdInput');
+  refs.capabilityMeta = document.getElementById('capabilityMeta');
+  refs.capabilitySummary = document.getElementById('capabilitySummary');
+  refs.capabilityDetailMeta = document.getElementById('capabilityDetailMeta');
+  refs.capabilityEditor = document.getElementById('capabilityEditor');
+  refs.capabilitySaveForm = document.getElementById('capabilitySaveForm');
+  refs.saveCapabilityButton = document.getElementById('saveCapabilityButton');
+  refs.dictionaryCreateForm = document.getElementById('dictionaryCreateForm');
+  refs.dictionaryMeta = document.getElementById('dictionaryMeta');
+  refs.dictionaryDetailMeta = document.getElementById('dictionaryDetailMeta');
+  refs.dictionaryList = document.getElementById('dictionaryList');
   refs.toast = document.getElementById('toast');
 }
 
@@ -106,6 +126,11 @@ function bindEvents() {
   refs.claimReviewForm.addEventListener('submit', handleClaimReviewSubmit);
   refs.submissionsViewButton.addEventListener('click', () => switchView('submissions'));
   refs.claimsViewButton.addEventListener('click', () => switchView('claims'));
+  refs.capabilitiesViewButton.addEventListener('click', () => switchView('capabilities'));
+  refs.dictionaryViewButton.addEventListener('click', () => switchView('dictionary'));
+  refs.capabilitySearchForm.addEventListener('submit', handleCapabilitySearchSubmit);
+  refs.capabilitySaveForm.addEventListener('submit', handleCapabilitySaveSubmit);
+  refs.dictionaryCreateForm.addEventListener('submit', handleDictionaryCreateSubmit);
 }
 
 function resolveInitialApiBase() {
@@ -224,6 +249,10 @@ function logout(showFeedback = true) {
   state.claimQueue = [];
   state.selectedClaimRequestId = null;
   state.currentClaimDetail = null;
+  state.capabilityDefinitions = [];
+  state.managedClinicId = null;
+  state.managedClinicCapabilities = null;
+  state.capabilityDraftItems = [];
   localStorage.removeItem(STORAGE_KEYS.token);
   renderAuthState();
   renderQueue();
@@ -231,6 +260,8 @@ function logout(showFeedback = true) {
   renderLogs();
   renderClaimQueue();
   renderClaimDetail();
+  renderCapabilityManager();
+  renderDictionaryList();
 
   if (showFeedback) {
     showToast('已退出后台');
@@ -255,6 +286,17 @@ async function loadInitialDashboardData() {
     return;
   }
 
+  if (state.activeView === 'capabilities') {
+    await bootstrapCapabilityManager();
+    return;
+  }
+
+  if (state.activeView === 'dictionary') {
+    await loadCapabilityDefinitions();
+    renderDictionaryList();
+    return;
+  }
+
   await loadQueue();
 }
 
@@ -271,21 +313,46 @@ function switchView(view) {
     return;
   }
 
+  if (view === 'capabilities') {
+    bootstrapCapabilityManager();
+    return;
+  }
+
+  if (view === 'dictionary') {
+    loadCapabilityDefinitions().then(() => {
+      renderDictionaryList();
+    });
+    return;
+  }
+
   loadQueue();
 }
 
 function renderActiveView() {
   const isSubmissionsView = state.activeView === 'submissions';
+  const isClaimsView = state.activeView === 'claims';
+  const isCapabilitiesView = state.activeView === 'capabilities';
+  const isDictionaryView = state.activeView === 'dictionary';
 
   refs.submissionsDashboard.classList.toggle('hidden', !isSubmissionsView);
-  refs.claimsDashboard.classList.toggle('hidden', isSubmissionsView);
+  refs.claimsDashboard.classList.toggle('hidden', !isClaimsView);
+  refs.capabilitiesDashboard.classList.toggle('hidden', !isCapabilitiesView);
+  refs.dictionaryDashboard.classList.toggle('hidden', !isDictionaryView);
   refs.submissionsViewButton.classList.toggle(
     'view-switch__button--active',
     isSubmissionsView,
   );
   refs.claimsViewButton.classList.toggle(
     'view-switch__button--active',
-    !isSubmissionsView,
+    isClaimsView,
+  );
+  refs.capabilitiesViewButton.classList.toggle(
+    'view-switch__button--active',
+    isCapabilitiesView,
+  );
+  refs.dictionaryViewButton.classList.toggle(
+    'view-switch__button--active',
+    isDictionaryView,
   );
 }
 
@@ -622,6 +689,10 @@ function renderDetail() {
         <p>照片：${escapeHtml(String((detail.photos || []).length))} 张</p>
       </article>
       <article class="detail-block">
+        <h4>能力补充信息</h4>
+        ${renderSubmittedCapabilities(detail.submittedCapabilities)}
+      </article>
+      <article class="detail-block">
         <h4>提交人与审核备注</h4>
         <p>提交人：${escapeHtml(
           detail.submitter && detail.submitter.nickname
@@ -635,6 +706,13 @@ function renderDetail() {
         <h4>关联诊所</h4>
         ${renderClinicSummary(detail.linkedClinic, '当前关联诊所')}
         ${renderClinicSummary(detail.matchedClinic, '当前合并目标')}
+        ${
+          detail.linkedClinic || detail.matchedClinic
+            ? `<button class="secondary-button" type="button" data-open-capability-clinic-id="${
+                detail.linkedClinic ? detail.linkedClinic.clinicId : detail.matchedClinic.clinicId
+              }">去能力管理页维护</button>`
+            : ''
+        }
       </article>
       <article class="detail-block">
         <h4>候选重复</h4>
@@ -670,6 +748,21 @@ function renderDetail() {
       refs.matchedClinicIdInput.focus();
     });
   });
+  refs.detailContent
+    .querySelectorAll('[data-open-capability-clinic-id]')
+    .forEach((button) => {
+      button.addEventListener('click', async () => {
+        const clinicId = Number(button.getAttribute('data-open-capability-clinic-id'));
+        if (!clinicId) {
+          return;
+        }
+
+        state.activeView = 'capabilities';
+        renderActiveView();
+        refs.capabilityClinicIdInput.value = String(clinicId);
+        await bootstrapCapabilityManager(clinicId);
+      });
+    });
 }
 
 function renderClinicSummary(clinic, label) {
@@ -703,6 +796,45 @@ function renderPotentialMatches(matches) {
       `,
     )
     .join('');
+}
+
+function renderSubmittedCapabilities(capabilities) {
+  if (!capabilities) {
+    return '<p class="empty-state">当前推荐单没有提交能力信息。</p>';
+  }
+
+  const groups = [
+    ['服务项目', capabilities.services || []],
+    ['擅长领域', capabilities.specialties || []],
+    ['设备能力', capabilities.equipment || []],
+    ['设施能力', capabilities.facilities || []],
+    ['接诊类型', capabilities.speciesSupported || []],
+  ];
+
+  const hasItems = groups.some(([, items]) => items.length > 0);
+
+  if (!hasItems && !capabilities.capabilityNotes) {
+    return '<p class="empty-state">当前推荐单没有提交能力信息。</p>';
+  }
+
+  return `
+    <div class="capability-preview">
+      ${groups
+        .map(
+          ([label, items]) => `
+            <div class="capability-preview__group">
+              <strong>${escapeHtml(label)}</strong>
+              <p>${escapeHtml(items.length > 0 ? items.map((item) => item.name).join(' / ') : '未填写')}</p>
+            </div>
+          `,
+        )
+        .join('')}
+      <div class="capability-preview__group">
+        <strong>补充说明</strong>
+        <p>${escapeHtml(capabilities.capabilityNotes || '未填写')}</p>
+      </div>
+    </div>
+  `;
 }
 
 function renderHistoricalDuplicates(items) {
@@ -873,6 +1005,411 @@ function resetClaimFilters() {
   loadClaimQueue();
 }
 
+async function bootstrapCapabilityManager(preferredClinicId) {
+  await loadCapabilityDefinitions();
+  renderCapabilityManager();
+
+  const clinicId =
+    preferredClinicId || Number(refs.capabilityClinicIdInput.value || state.managedClinicId || 0);
+
+  if (clinicId) {
+    refs.capabilityClinicIdInput.value = String(clinicId);
+    await loadClinicCapabilities(clinicId);
+  }
+}
+
+async function loadCapabilityDefinitions() {
+  try {
+    const result = await request('/admin/capability-definitions');
+    state.capabilityDefinitions = Array.isArray(result) ? result : [];
+    refs.dictionaryMeta.textContent = `共 ${state.capabilityDefinitions.length} 项`;
+  } catch (error) {
+    state.capabilityDefinitions = [];
+    refs.dictionaryMeta.textContent = '加载失败';
+    showToast(error.message || '能力字典加载失败', true);
+  }
+}
+
+async function handleCapabilitySearchSubmit(event) {
+  event.preventDefault();
+  const clinicId = Number(refs.capabilityClinicIdInput.value.trim());
+
+  if (!clinicId) {
+    showToast('请输入有效的诊所 ID', true);
+    return;
+  }
+
+  await loadClinicCapabilities(clinicId);
+}
+
+async function loadClinicCapabilities(clinicId) {
+  refs.capabilityMeta.textContent = '加载中...';
+  refs.capabilityDetailMeta.textContent = `诊所 #${clinicId}`;
+
+  try {
+    const result = await request(`/admin/clinics/${clinicId}/capabilities`);
+    state.managedClinicId = clinicId;
+    state.managedClinicCapabilities = result;
+    state.capabilityDraftItems = flattenCapabilityItems(result);
+    refs.capabilityMeta.textContent = `诊所 #${clinicId}`;
+    renderCapabilityManager();
+  } catch (error) {
+    state.managedClinicId = clinicId;
+    state.managedClinicCapabilities = null;
+    state.capabilityDraftItems = [];
+    refs.capabilityMeta.textContent = '加载失败';
+    renderCapabilityManager();
+    showToast(error.message || '加载诊所能力档案失败', true);
+  }
+}
+
+function flattenCapabilityItems(capabilities) {
+  return [
+    ...(capabilities.services || []),
+    ...(capabilities.specialties || []),
+    ...(capabilities.equipment || []),
+    ...(capabilities.facilities || []),
+    ...(capabilities.speciesSupported || []),
+  ].map((item) => ({
+    code: item.code,
+    verificationStatus: item.verificationStatus || 'verified',
+    note: item.note || '',
+  }));
+}
+
+function getCapabilityDraftItem(code) {
+  return state.capabilityDraftItems.find((item) => item.code === code) || null;
+}
+
+function upsertCapabilityDraftItem(nextItem) {
+  const existingIndex = state.capabilityDraftItems.findIndex(
+    (item) => item.code === nextItem.code,
+  );
+
+  if (existingIndex >= 0) {
+    state.capabilityDraftItems[existingIndex] = nextItem;
+  } else {
+    state.capabilityDraftItems.push(nextItem);
+  }
+}
+
+function removeCapabilityDraftItem(code) {
+  state.capabilityDraftItems = state.capabilityDraftItems.filter((item) => item.code !== code);
+}
+
+function renderCapabilityManager() {
+  if (!state.admin) {
+    refs.capabilitySummary.innerHTML =
+      '<div class="empty-state">登录后才能维护诊所能力档案。</div>';
+    refs.capabilityEditor.innerHTML =
+      '<div class="empty-state">登录后这里会展示能力分组与审核状态。</div>';
+    refs.capabilitySaveForm.classList.add('hidden');
+    return;
+  }
+
+  const selectedCount = state.capabilityDraftItems.length;
+  refs.capabilitySummary.innerHTML = `
+    <div class="detail-block full">
+      <h4>当前上下文</h4>
+      <p>诊所 ID：${escapeHtml(state.managedClinicId ? String(state.managedClinicId) : '未选择')}</p>
+      <p>已选能力项：${escapeHtml(String(selectedCount))} 项</p>
+      <p>高价值摘要：${escapeHtml(
+        state.managedClinicCapabilities && state.managedClinicCapabilities.highlights
+          ? state.managedClinicCapabilities.highlights.join(' / ') || '暂无'
+          : '暂无',
+      )}</p>
+    </div>
+  `;
+
+  if (!state.managedClinicId) {
+    refs.capabilityDetailMeta.textContent = '未选择诊所';
+    refs.capabilityEditor.innerHTML =
+      '<div class="empty-state">输入诊所 ID 后加载能力档案。</div>';
+    refs.capabilitySaveForm.classList.add('hidden');
+    return;
+  }
+
+  const groupedDefinitions = groupCapabilityDefinitions(state.capabilityDefinitions);
+  refs.capabilityDetailMeta.textContent = `诊所 #${state.managedClinicId}`;
+  refs.capabilityEditor.innerHTML = renderCapabilityEditorGroups(groupedDefinitions);
+  refs.capabilitySaveForm.classList.remove('hidden');
+  bindCapabilityEditorEvents();
+}
+
+function groupCapabilityDefinitions(definitions) {
+  const groups = {
+    service: [],
+    specialty: [],
+    equipment: [],
+    facility: [],
+    species_supported: [],
+  };
+
+  definitions.forEach((item) => {
+    if (groups[item.type]) {
+      groups[item.type].push(item);
+    }
+  });
+
+  return groups;
+}
+
+function renderCapabilityEditorGroups(groups) {
+  const sections = [
+    ['service', '服务项目'],
+    ['specialty', '擅长领域'],
+    ['equipment', '设备能力'],
+    ['facility', '设施能力'],
+    ['species_supported', '接诊类型'],
+  ];
+
+  return sections
+    .map(([type, title]) => {
+      const items = groups[type] || [];
+
+      return `
+        <section class="detail-block full">
+          <h4>${escapeHtml(title)}</h4>
+          <div class="capability-editor-grid">
+            ${
+              items.length > 0
+                ? items.map((item) => renderCapabilityEditorCard(item)).join('')
+                : '<p class="empty-state">当前类型还没有字典项。</p>'
+            }
+          </div>
+        </section>
+      `;
+    })
+    .join('');
+}
+
+function renderCapabilityEditorCard(item) {
+  const draft = getCapabilityDraftItem(item.code);
+  const checked = Boolean(draft);
+  const status = draft ? draft.verificationStatus : 'verified';
+  const note = draft ? draft.note : '';
+
+  return `
+    <article class="capability-editor-card ${checked ? 'capability-editor-card--active' : ''}">
+      <label class="capability-checkbox">
+        <input type="checkbox" data-capability-toggle="${escapeHtml(item.code)}" ${checked ? 'checked' : ''} />
+        <span>
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${escapeHtml(item.code)}</small>
+          <small>${item.isActive ? '启用中' : '已停用'}</small>
+        </span>
+      </label>
+      <div class="capability-editor-card__body ${checked ? '' : 'hidden'}" data-capability-body="${escapeHtml(item.code)}">
+        <label class="field compact">
+          <span>审核状态</span>
+          <select data-capability-status="${escapeHtml(item.code)}">
+            <option value="verified" ${status === 'verified' ? 'selected' : ''}>已核验</option>
+            <option value="pending" ${status === 'pending' ? 'selected' : ''}>待核验</option>
+            <option value="rejected" ${status === 'rejected' ? 'selected' : ''}>已驳回</option>
+          </select>
+        </label>
+        <label class="field compact">
+          <span>备注</span>
+          <input type="text" data-capability-note="${escapeHtml(item.code)}" value="${escapeHtml(note)}" placeholder="可选备注" />
+        </label>
+      </div>
+    </article>
+  `;
+}
+
+function bindCapabilityEditorEvents() {
+  refs.capabilityEditor
+    .querySelectorAll('[data-capability-toggle]')
+    .forEach((input) => {
+      input.addEventListener('change', () => {
+        const code = input.getAttribute('data-capability-toggle');
+        const body = refs.capabilityEditor.querySelector(`[data-capability-body="${cssEscape(code)}"]`);
+
+        if (input.checked) {
+          upsertCapabilityDraftItem({
+            code,
+            verificationStatus: 'verified',
+            note: '',
+          });
+          if (body) {
+            body.classList.remove('hidden');
+          }
+        } else {
+          removeCapabilityDraftItem(code);
+          if (body) {
+            body.classList.add('hidden');
+          }
+        }
+      });
+    });
+
+  refs.capabilityEditor
+    .querySelectorAll('[data-capability-status]')
+    .forEach((select) => {
+      select.addEventListener('change', () => {
+        const code = select.getAttribute('data-capability-status');
+        const current = getCapabilityDraftItem(code);
+        if (!current) {
+          return;
+        }
+
+        upsertCapabilityDraftItem({
+          ...current,
+          verificationStatus: select.value,
+        });
+      });
+    });
+
+  refs.capabilityEditor
+    .querySelectorAll('[data-capability-note]')
+    .forEach((input) => {
+      input.addEventListener('input', () => {
+        const code = input.getAttribute('data-capability-note');
+        const current = getCapabilityDraftItem(code);
+        if (!current) {
+          return;
+        }
+
+        upsertCapabilityDraftItem({
+          ...current,
+          note: input.value,
+        });
+      });
+    });
+}
+
+async function handleCapabilitySaveSubmit(event) {
+  event.preventDefault();
+
+  if (!state.managedClinicId) {
+    showToast('请先加载诊所能力档案', true);
+    return;
+  }
+
+  refs.saveCapabilityButton.disabled = true;
+  refs.saveCapabilityButton.textContent = '保存中...';
+
+  try {
+    const result = await request(`/admin/clinics/${state.managedClinicId}/capabilities`, {
+      method: 'PUT',
+      body: {
+        items: state.capabilityDraftItems.map((item) => ({
+          code: item.code,
+          verificationStatus: item.verificationStatus,
+          note: item.note ? item.note.trim() : undefined,
+        })),
+      },
+    });
+    state.managedClinicCapabilities = result;
+    state.capabilityDraftItems = flattenCapabilityItems(result);
+    renderCapabilityManager();
+    showToast('诊所能力档案已保存');
+  } catch (error) {
+    showToast(error.message || '保存能力档案失败', true);
+  } finally {
+    refs.saveCapabilityButton.disabled = false;
+    refs.saveCapabilityButton.textContent = '保存能力档案';
+  }
+}
+
+function renderDictionaryList() {
+  if (!state.admin) {
+    refs.dictionaryList.innerHTML = '<div class="empty-state">登录后加载能力字典。</div>';
+    return;
+  }
+
+  refs.dictionaryDetailMeta.textContent = `${state.capabilityDefinitions.length} 项`;
+
+  if (!state.capabilityDefinitions.length) {
+    refs.dictionaryList.innerHTML = '<div class="empty-state">当前没有能力字典项。</div>';
+    return;
+  }
+
+  refs.dictionaryList.innerHTML = state.capabilityDefinitions
+    .map(
+      (item) => `
+        <article class="dictionary-card">
+          <div class="dictionary-card__body">
+            <h4>${escapeHtml(item.name)}</h4>
+            <p>${escapeHtml(item.code)} · ${escapeHtml(item.type)} · sort=${escapeHtml(String(item.sortOrder))}</p>
+            <p>状态：${escapeHtml(item.isActive ? '启用中' : '已停用')}</p>
+          </div>
+          <div class="dictionary-card__actions">
+            <button class="secondary-button" type="button" data-dictionary-toggle="${item.id}" data-next-active="${item.isActive ? 0 : 1}">
+              ${item.isActive ? '停用' : '启用'}
+            </button>
+            <button class="ghost-button" type="button" data-dictionary-delete="${item.id}">
+              删除
+            </button>
+          </div>
+        </article>
+      `,
+    )
+    .join('');
+
+  refs.dictionaryList.querySelectorAll('[data-dictionary-toggle]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const id = Number(button.getAttribute('data-dictionary-toggle'));
+      const nextActive = Number(button.getAttribute('data-next-active'));
+
+      try {
+        await request(`/admin/capability-definitions/${id}`, {
+          method: 'PATCH',
+          body: {
+            isActive: nextActive,
+          },
+        });
+        await loadCapabilityDefinitions();
+        renderDictionaryList();
+        showToast('能力字典状态已更新');
+      } catch (error) {
+        showToast(error.message || '更新能力字典状态失败', true);
+      }
+    });
+  });
+
+  refs.dictionaryList.querySelectorAll('[data-dictionary-delete]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const id = Number(button.getAttribute('data-dictionary-delete'));
+
+      try {
+        await request(`/admin/capability-definitions/${id}`, {
+          method: 'DELETE',
+        });
+        await loadCapabilityDefinitions();
+        renderDictionaryList();
+        showToast('能力字典项已删除');
+      } catch (error) {
+        showToast(error.message || '删除能力字典项失败', true);
+      }
+    });
+  });
+}
+
+async function handleDictionaryCreateSubmit(event) {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+
+  try {
+    await request('/admin/capability-definitions', {
+      method: 'POST',
+      body: {
+        code: String(formData.get('code') || '').trim(),
+        name: String(formData.get('name') || '').trim(),
+        type: String(formData.get('type') || '').trim(),
+        sortOrder: Number(formData.get('sortOrder') || 0),
+      },
+    });
+    refs.dictionaryCreateForm.reset();
+    refs.dictionarySortOrderInput.value = '0';
+    await loadCapabilityDefinitions();
+    renderDictionaryList();
+    showToast('能力字典项已创建');
+  } catch (error) {
+    showToast(error.message || '创建能力字典项失败', true);
+  }
+}
+
 async function request(path, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
@@ -932,6 +1469,14 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function cssEscape(value) {
+  if (window.CSS && typeof window.CSS.escape === 'function') {
+    return window.CSS.escape(value);
+  }
+
+  return String(value).replace(/"/g, '\\"');
 }
 
 function showToast(message, isError = false) {

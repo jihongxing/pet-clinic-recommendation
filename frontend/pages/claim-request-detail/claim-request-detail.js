@@ -2,7 +2,7 @@ const { ensureLogin } = require('../../utils/auth');
 const { request } = require('../../utils/api');
 
 const STATUS_META = {
-  pending: { label: '待审核', badgeClass: 'detail-status--pending' },
+  pending: { label: '处理中', badgeClass: 'detail-status--pending' },
   approved: { label: '已通过', badgeClass: 'detail-status--success' },
   rejected: { label: '未通过', badgeClass: 'detail-status--rejected' },
 };
@@ -41,7 +41,7 @@ function buildDetailViewModel(detail) {
     statusBadgeClass: statusMeta.badgeClass,
     locationText: buildLocationText(detail) || '地址待补充',
     createdAtText: formatDateTime(detail.createdAt),
-    reviewedAtText: detail.reviewedAt ? formatDateTime(detail.reviewedAt) : '尚未审核',
+    reviewedAtText: detail.reviewedAt ? formatDateTime(detail.reviewedAt) : '处理中',
   };
 }
 

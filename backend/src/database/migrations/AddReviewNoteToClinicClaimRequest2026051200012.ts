@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddReviewNoteToClinicClaimRequest2026051200012
-  implements MigrationInterface
-{
+export class AddReviewNoteToClinicClaimRequest2026051200012 implements MigrationInterface {
   name = 'AddReviewNoteToClinicClaimRequest2026051200012';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

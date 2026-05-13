@@ -3,14 +3,22 @@ const { ensureLogin } = require('../../utils/auth');
 const { formatDistance } = require('../../utils/util');
 
 const TAG_GROUPS = [
-  { key: 'trust', title: '信任标签', badgeClass: 'tag-group__badge--trust' },
-  { key: 'value', title: '性价比标签', badgeClass: 'tag-group__badge--value' },
+  { key: 'trust', title: '信任印象', badgeClass: 'tag-group__badge--trust' },
+  { key: 'value', title: '性价比印象', badgeClass: 'tag-group__badge--value' },
   {
     key: 'experience',
-    title: '体验标签',
+    title: '体验印象',
     badgeClass: 'tag-group__badge--experience',
   },
-  { key: 'social', title: '社交标签', badgeClass: 'tag-group__badge--social' },
+  { key: 'social', title: '大家常提到', badgeClass: 'tag-group__badge--social' },
+];
+
+const CAPABILITY_GROUPS = [
+  { key: 'services', title: '服务项目' },
+  { key: 'specialties', title: '擅长领域' },
+  { key: 'equipment', title: '诊断设备' },
+  { key: 'facilities', title: '设施能力' },
+  { key: 'speciesSupported', title: '接诊类型' },
 ];
 
 function formatScore(score) {
@@ -26,6 +34,7 @@ function buildTagGroups(tags) {
 
 function buildClinicViewModel(clinic) {
   const tags = clinic.tags || {};
+  const capabilities = clinic.capabilities || {};
 
   return {
     ...clinic,
@@ -47,12 +56,19 @@ function buildClinicViewModel(clinic) {
       },
       {
         key: 'confidenceFactor',
-        label: '可信度',
+        label: '信息可靠性',
         value: `${Math.round(Number((clinic.scores && clinic.scores.confidenceFactor) || 0) * 100)}%`,
         accentClass: '',
       },
     ],
     tagGroups: buildTagGroups(tags),
+    capabilityGroups: CAPABILITY_GROUPS.map((group) => ({
+      ...group,
+      items: Array.isArray(capabilities[group.key]) ? capabilities[group.key] : [],
+    })).filter((group) => group.items.length > 0),
+    capabilityHighlights: Array.isArray(capabilities.highlights)
+      ? capabilities.highlights
+      : [],
   };
 }
 

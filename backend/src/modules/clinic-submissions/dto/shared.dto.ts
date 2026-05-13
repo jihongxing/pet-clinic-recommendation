@@ -29,5 +29,21 @@ export function toStringArray(value: unknown) {
   return value;
 }
 
+export function toCodeArray(value: unknown) {
+  const arrayValue = toStringArray(value);
+
+  if (!Array.isArray(arrayValue)) {
+    return arrayValue;
+  }
+
+  return arrayValue
+    .map((item) =>
+      typeof item === 'string' ? item.trim() : String(item ?? '').trim(),
+    )
+    .filter(Boolean);
+}
+
 export const ToNumber = () => Transform(({ value }) => toNumber(value));
-export const ToStringArray = () => Transform(({ value }) => toStringArray(value));
+export const ToStringArray = () =>
+  Transform(({ value }) => toStringArray(value));
+export const ToCodeArray = () => Transform(({ value }) => toCodeArray(value));

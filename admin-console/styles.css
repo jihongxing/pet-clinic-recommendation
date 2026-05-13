@@ -304,7 +304,9 @@ textarea:focus {
 .detail-block,
 .match-card,
 .duplicate-card,
-.timeline-item {
+.timeline-item,
+.dictionary-card,
+.capability-editor-card {
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface-strong);
@@ -408,6 +410,65 @@ textarea:focus {
   margin-top: 10px;
 }
 
+.capability-preview,
+.capability-editor-grid,
+.dictionary-card__actions,
+.dictionary-card__body,
+.capability-editor-card__body {
+  display: grid;
+  gap: 10px;
+}
+
+.capability-preview__group p,
+.dictionary-card__body p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.capability-editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.capability-editor-card,
+.dictionary-card {
+  padding: 16px;
+}
+
+.capability-editor-card--active {
+  border-color: rgba(185, 92, 55, 0.42);
+}
+
+.capability-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.capability-checkbox input {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+}
+
+.capability-checkbox span {
+  display: grid;
+  gap: 4px;
+}
+
+.capability-checkbox small {
+  color: var(--muted);
+}
+
+.dictionary-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dictionary-card__actions {
+  width: 120px;
+}
+
 .review-form {
   margin-top: 20px;
   padding-top: 20px;
@@ -473,6 +534,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .capability-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
   .hero {
     flex-direction: column;
   }
@@ -498,5 +563,9 @@ textarea:focus {
 
   .filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dictionary-card {
+    flex-direction: column;
   }
 }

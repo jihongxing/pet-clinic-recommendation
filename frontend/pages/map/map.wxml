@@ -38,10 +38,10 @@
     <view class="summary-card__metrics">
       <text class="metric-pill">口碑 {{selectedClinic.reputationScoreText}}</text>
       <text class="metric-pill metric-pill--value">性价比 {{selectedClinic.priceScoreText}}</text>
-      <text class="metric-pill metric-pill--soft">可信度 {{selectedClinic.confidenceText}}</text>
+      <text class="metric-pill metric-pill--soft">信息可靠性 {{selectedClinic.confidenceText}}</text>
     </view>
     <view class="summary-card__footer">
-      <text class="muted">{{selectedClinic.totalUsers}} 人打过标签</text>
+      <text class="muted">{{selectedClinic.totalUsers}} 人留下过印象</text>
       <text class="summary-card__action">查看详情</text>
     </view>
   </view>

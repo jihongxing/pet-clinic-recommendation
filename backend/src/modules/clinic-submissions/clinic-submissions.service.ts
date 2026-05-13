@@ -20,12 +20,18 @@ import { RESPONSE_CODE } from '../../common/constants/response-code.constants';
 import {
   AdminUserEntity,
   ClinicEntity,
+  CapabilityProfileStatus,
   ClinicSubmissionReviewAction,
   ClinicSubmissionReviewLogEntity,
   ClinicSubmissionEntity,
   ClinicSubmissionStatus,
   ClinicSubmissionType,
 } from '../../database/entities';
+import { ClinicCacheService } from '../clinics/services/clinic-cache.service';
+import {
+  ClinicCapabilityProfileService,
+  GroupedSubmissionCapabilitySnapshot,
+} from '../clinics/services/clinic-capability-profile.service';
 import { CreateClinicSubmissionDto } from './dto/create-clinic-submission.dto';
 import { GetAdminClinicSubmissionsQueryDto } from './dto/get-admin-clinic-submissions-query.dto';
 import { GetClinicSubmissionMatchesQueryDto } from './dto/get-clinic-submission-matches-query.dto';
@@ -152,6 +158,7 @@ export interface AdminClinicSubmissionDetailResult {
   phone: string | null;
   businessHours: string | null;
   photos: string[];
+  submittedCapabilities: GroupedSubmissionCapabilitySnapshot;
   reason: string;
   reviewNote: string | null;
   createdAt: Date;
@@ -260,6 +267,8 @@ const CLINIC_SUBMISSION_UPLOAD_EXTENSIONS: Record<string, string> = {
 export class ClinicSubmissionsService {
   constructor(
     private readonly dataSource: DataSource,
+    private readonly clinicCacheService: ClinicCacheService,
+    private readonly clinicCapabilityProfileService: ClinicCapabilityProfileService,
     @InjectRepository(AdminUserEntity)
     private readonly adminUserRepository: Repository<AdminUserEntity>,
     @InjectRepository(ClinicSubmissionEntity)
@@ -431,7 +440,7 @@ export class ClinicSubmissionsService {
     return {
       list: submissions.map((submission, index) => {
         const reviewer = submission.reviewedBy
-          ? reviewerMap.get(submission.reviewedBy) ?? null
+          ? (reviewerMap.get(submission.reviewedBy) ?? null)
           : null;
 
         return {
@@ -512,29 +521,41 @@ export class ClinicSubmissionsService {
       });
     }
 
-    const [reviewer, potentialMatches, historicalDuplicates] =
-      await Promise.all([
-        submission.reviewedBy
-          ? this.adminUserRepository.findOne({
-              where: {
-                id: submission.reviewedBy,
-              },
-            })
-          : Promise.resolve(null),
-        this.findPotentialClinicMatches(
-          {
-            name: submission.name,
-            address: submission.address,
-            city: submission.city,
-            district: submission.district,
-            phone: submission.phone,
-            lat: submission.lat,
-            lng: submission.lng,
-          },
-          5,
-        ),
-        this.findHistoricalDuplicates(submission),
-      ]);
+    const [
+      reviewer,
+      potentialMatches,
+      historicalDuplicates,
+      submittedCapabilities,
+    ] = await Promise.all([
+      submission.reviewedBy
+        ? this.adminUserRepository.findOne({
+            where: {
+              id: submission.reviewedBy,
+            },
+          })
+        : Promise.resolve(null),
+      this.findPotentialClinicMatches(
+        {
+          name: submission.name,
+          address: submission.address,
+          city: submission.city,
+          district: submission.district,
+          phone: submission.phone,
+          lat: submission.lat,
+          lng: submission.lng,
+        },
+        5,
+      ),
+      this.findHistoricalDuplicates(submission),
+      this.clinicCapabilityProfileService.buildSubmissionCapabilitySnapshot({
+        services: submission.servicesJson,
+        specialties: submission.specialtiesJson,
+        equipment: submission.equipmentJson,
+        facilities: submission.facilitiesJson,
+        speciesSupported: submission.speciesSupportedJson,
+        capabilityNotes: submission.capabilityNotes,
+      }),
+    ]);
 
     return {
       id: Number(submission.id),
@@ -551,6 +572,7 @@ export class ClinicSubmissionsService {
       phone: submission.phone,
       businessHours: submission.businessHours,
       photos: Array.isArray(submission.photosJson) ? submission.photosJson : [],
+      submittedCapabilities,
       reason: submission.reason,
       reviewNote: submission.reviewNote,
       createdAt: submission.createdAt,
@@ -670,7 +692,9 @@ export class ClinicSubmissionsService {
     payload: ReviewClinicSubmissionDto,
   ): Promise<ReviewClinicSubmissionResult> {
     return this.dataSource.transaction(async (manager) => {
-      const submissionRepository = manager.getRepository(ClinicSubmissionEntity);
+      const submissionRepository = manager.getRepository(
+        ClinicSubmissionEntity,
+      );
       const clinicRepository = manager.getRepository(ClinicEntity);
       const reviewLogRepository = manager.getRepository(
         ClinicSubmissionReviewLogEntity,
@@ -703,6 +727,13 @@ export class ClinicSubmissionsService {
           clinicRepository,
           submission,
         );
+        await this.clinicCapabilityProfileService.applySubmissionToClinicProfile(
+          manager,
+          createdClinic,
+          submission,
+          adminUserId,
+          reviewNote,
+        );
         clinicId = createdClinic.id;
         matchedClinicId = null;
         nextStatus = ClinicSubmissionStatus.ApprovedNew;
@@ -721,6 +752,15 @@ export class ClinicSubmissionsService {
           });
         }
 
+        await this.clinicCapabilityProfileService.applySubmissionToClinicProfile(
+          manager,
+          targetClinic,
+          submission,
+          adminUserId,
+          reviewNote,
+        );
+
+        clinicId = targetClinic.id;
         matchedClinicId = targetClinic.id;
         nextStatus = ClinicSubmissionStatus.Merged;
       } else if (payload.action === ClinicSubmissionReviewAction.NeedInfo) {
@@ -746,6 +786,10 @@ export class ClinicSubmissionsService {
         note: reviewNote,
       });
       const savedReviewLog = await reviewLogRepository.save(reviewLog);
+
+      if (clinicId) {
+        await this.clinicCacheService.invalidateAfterReview(clinicId);
+      }
 
       return {
         id: Number(savedSubmission.id),
@@ -839,14 +883,14 @@ export class ClinicSubmissionsService {
       `,
       hasLocation
         ? [
-        `%${normalizedName}%`,
-        normalizedAddress ? `%${normalizedAddress}%` : '',
-        normalizedPhone,
-        payload.lat!,
-        payload.lng!,
-        normalizedCity,
-        normalizedName,
-      ]
+            `%${normalizedName}%`,
+            normalizedAddress ? `%${normalizedAddress}%` : '',
+            normalizedPhone,
+            payload.lat!,
+            payload.lng!,
+            normalizedCity,
+            normalizedName,
+          ]
         : [
             `%${normalizedName}%`,
             normalizedAddress ? `%${normalizedAddress}%` : '',
@@ -871,7 +915,10 @@ export class ClinicSubmissionsService {
         if (clinicName === normalizedName) {
           reasons.push('名称完全一致');
           score += 60;
-        } else if (clinicName.includes(normalizedName) || normalizedName.includes(clinicName)) {
+        } else if (
+          clinicName.includes(normalizedName) ||
+          normalizedName.includes(clinicName)
+        ) {
           reasons.push('名称高度相似');
           score += 40;
         } else {
@@ -966,7 +1013,9 @@ export class ClinicSubmissionsService {
             ]
           : []),
       ].filter((item) =>
-        Object.values(item).some((value) => value !== undefined && value !== null),
+        Object.values(item).some(
+          (value) => value !== undefined && value !== null,
+        ),
       ) as FindOptionsWhere<ClinicSubmissionEntity>[],
       relations: {
         submitterUser: true,
@@ -1062,6 +1111,22 @@ export class ClinicSubmissionsService {
       });
     }
 
+    const services = Array.isArray(submission.servicesJson)
+      ? submission.servicesJson
+      : [];
+    const specialties = Array.isArray(submission.specialtiesJson)
+      ? submission.specialtiesJson
+      : [];
+    const equipment = Array.isArray(submission.equipmentJson)
+      ? submission.equipmentJson
+      : [];
+    const facilities = Array.isArray(submission.facilitiesJson)
+      ? submission.facilitiesJson
+      : [];
+    const speciesSupported = Array.isArray(submission.speciesSupportedJson)
+      ? submission.speciesSupportedJson
+      : [];
+
     const clinic = clinicRepository.create({
       name: submission.name.trim(),
       address: submission.address.trim(),
@@ -1076,6 +1141,21 @@ export class ClinicSubmissionsService {
       businessHours: submission.businessHours,
       city: submission.city.trim(),
       district: submission.district,
+      summary: null,
+      coverPhotoUrl: Array.isArray(submission.photosJson)
+        ? (submission.photosJson[0] ?? null)
+        : null,
+      galleryPhotosJson: Array.isArray(submission.photosJson)
+        ? submission.photosJson
+        : [],
+      capabilityProfileStatus:
+        services.length > 0 ||
+        specialties.length > 0 ||
+        equipment.length > 0 ||
+        facilities.length > 0 ||
+        speciesSupported.length > 0
+          ? CapabilityProfileStatus.Pending
+          : CapabilityProfileStatus.Empty,
       isClaimed: 0,
       expireAt: null,
       status: 1,
@@ -1090,6 +1170,15 @@ export class ClinicSubmissionsService {
   ): Promise<CreateClinicSubmissionResult> {
     this.validateRequiredTextFields(payload);
     await this.validateClinicAssociation(payload);
+    const normalizedCapabilities =
+      await this.clinicCapabilityProfileService.validateSubmissionCapabilities({
+        services: payload.services,
+        specialties: payload.specialties,
+        equipment: payload.equipment,
+        facilities: payload.facilities,
+        speciesSupported: payload.speciesSupported,
+        capabilityNotes: payload.capabilityNotes,
+      });
 
     const submission = this.clinicSubmissionRepository.create({
       submitterUserId: userId,
@@ -1106,6 +1195,12 @@ export class ClinicSubmissionsService {
       photosJson: Array.isArray(payload.photos)
         ? payload.photos.map((item) => item.trim()).filter(Boolean)
         : [],
+      servicesJson: normalizedCapabilities.services,
+      specialtiesJson: normalizedCapabilities.specialties,
+      equipmentJson: normalizedCapabilities.equipment,
+      facilitiesJson: normalizedCapabilities.facilities,
+      speciesSupportedJson: normalizedCapabilities.speciesSupported,
+      capabilityNotes: normalizedCapabilities.capabilityNotes,
       reason: payload.reason.trim(),
       status: ClinicSubmissionStatus.PendingReview,
       matchedClinicId: null,
@@ -1216,10 +1311,7 @@ export class ClinicSubmissionsService {
     return trimmed === '' ? null : trimmed;
   }
 
-  private normalizeDateFilter(
-    value: string,
-    mode: 'start' | 'end',
-  ): Date {
+  private normalizeDateFilter(value: string, mode: 'start' | 'end'): Date {
     const normalizedValue = value.trim();
     const hasExplicitTime = normalizedValue.includes('T');
     const parsed = new Date(

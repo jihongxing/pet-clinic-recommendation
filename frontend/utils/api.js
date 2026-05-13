@@ -5,6 +5,30 @@ function getAppBaseUrl() {
   return app.globalData.apiBaseUrl;
 }
 
+function isLocalApiBaseUrl(url) {
+  return typeof url === 'string' && /https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(url);
+}
+
+function normalizeRequestFailure(err) {
+  const baseUrl = getAppBaseUrl();
+  const message = err && err.errMsg ? String(err.errMsg) : '';
+
+  if (
+    isLocalApiBaseUrl(baseUrl) &&
+    (message.includes('ERR_CONNECTION_REFUSED') ||
+      message.includes('timeout') ||
+      message.includes('request:fail'))
+  ) {
+    const error = new Error(`无法连接本地后端，请确认 ${baseUrl} 已启动`);
+    error.originalError = err;
+    return error;
+  }
+
+  const error = new Error(message || '网络异常，请稍后重试');
+  error.originalError = err;
+  return error;
+}
+
 function buildRequestError(message, res) {
   const error = new Error(message || '请求失败');
   error.response = res;
@@ -53,7 +77,7 @@ function request(options) {
           reject(error);
         }
       },
-      fail: (err) => reject(err),
+      fail: (err) => reject(normalizeRequestFailure(err)),
     });
   });
 }
@@ -106,7 +130,7 @@ function uploadFile(options) {
           reject(error);
         }
       },
-      fail: (error) => reject(error),
+      fail: (error) => reject(normalizeRequestFailure(error)),
     });
   });
 }

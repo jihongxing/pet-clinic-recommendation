@@ -9,6 +9,7 @@ import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
 
 import { RESPONSE_CODE } from '../../common/constants/response-code.constants';
 import {
+  CapabilityProfileStatus,
   ClinicAccountEntity,
   ClinicClaimRequestEntity,
   ClinicEntity,
@@ -23,11 +24,20 @@ import { AuthActorType } from '../auth/interfaces/jwt-payload.interface';
 import { RedisService } from '../redis/redis.service';
 import { CreateClinicClaimRequestDto } from './dto/create-clinic-claim-request.dto';
 import { GetAdminClaimRequestsQueryDto } from './dto/get-admin-claim-requests-query.dto';
+import { GetCapabilityDefinitionsQueryDto } from './dto/get-capability-definitions-query.dto';
 import { GetClinicDetailQueryDto } from './dto/get-clinic-detail-query.dto';
 import { GetNearbyClinicsQueryDto } from './dto/get-nearby-clinics-query.dto';
+import { CreateCapabilityDefinitionDto } from './dto/create-capability-definition.dto';
 import { ReviewClinicClaimRequestDto } from './dto/review-clinic-claim-request.dto';
 import { SearchClinicsQueryDto } from './dto/search-clinics-query.dto';
 import { SubmitClinicResponseDto } from './dto/submit-clinic-response.dto';
+import { UpdateCapabilityDefinitionDto } from './dto/update-capability-definition.dto';
+import { UpsertClinicCapabilitiesDto } from './dto/upsert-clinic-capabilities.dto';
+import {
+  ClinicCapabilityProfileService,
+  GroupedCapabilityDictionaryResponse,
+  GroupedClinicCapabilityResponse,
+} from './services/clinic-capability-profile.service';
 import { hash } from 'bcryptjs';
 
 interface NearbyClinicRawRow {
@@ -67,6 +77,10 @@ interface ClinicDetailRawRow {
   businessHours: string | null;
   city: string;
   district: string | null;
+  summary: string | null;
+  coverPhotoUrl: string | null;
+  galleryPhotosJson: string[] | null;
+  capabilityProfileStatus: CapabilityProfileStatus;
   trustScore: number | string;
   valueScore: number | string;
   experienceScore: number | string;
@@ -126,6 +140,7 @@ export interface NearbyClinicItem {
   totalTagCount: number;
   totalUsers: number;
   isClaimed: boolean;
+  capabilityHighlights: string[];
 }
 
 export interface NearbyClinicsResponse {
@@ -156,6 +171,10 @@ export interface ClinicDetailResponse {
   businessHours: string | null;
   city: string;
   district: string | null;
+  summary: string | null;
+  coverPhotoUrl: string | null;
+  galleryPhotos: string[];
+  capabilityProfileStatus: CapabilityProfileStatus;
   scores: {
     trust: number;
     value: number;
@@ -167,6 +186,7 @@ export interface ClinicDetailResponse {
     confidenceFactor: number;
   };
   tags: Record<string, ClinicDetailTagItem[]>;
+  capabilities: GroupedClinicCapabilityResponse;
   isClaimed: boolean;
 }
 
@@ -183,6 +203,7 @@ export interface SearchClinicItem {
   priceScore: number;
   confidenceFactor: number;
   isClaimed: boolean;
+  capabilityHighlights: string[];
 }
 
 export interface SearchClinicsResponse {
@@ -232,8 +253,7 @@ export interface ClinicClaimRequestDetailResult extends ClinicClaimRequestListIt
   submitterUserId: number | null;
 }
 
-export interface AdminClinicClaimRequestListItem
-  extends ClinicClaimRequestListItem {
+export interface AdminClinicClaimRequestListItem extends ClinicClaimRequestListItem {
   submitter: {
     userId: number | null;
     nickname: string | null;
@@ -281,6 +301,7 @@ export class ClinicsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly redisService: RedisService,
+    private readonly clinicCapabilityProfileService: ClinicCapabilityProfileService,
     @InjectRepository(ClinicEntity)
     private readonly clinicRepository: Repository<ClinicEntity>,
     @InjectRepository(ClinicAccountEntity)
@@ -292,6 +313,61 @@ export class ClinicsService {
     @InjectRepository(TagEntity)
     private readonly tagRepository: Repository<TagEntity>,
   ) {}
+
+  getCapabilityDefinitions(
+    query: GetCapabilityDefinitionsQueryDto,
+  ): Promise<GroupedCapabilityDictionaryResponse> {
+    return this.clinicCapabilityProfileService.getCapabilityDefinitions(query);
+  }
+
+  async listCapabilityDefinitionsForAdmin(
+    query: GetCapabilityDefinitionsQueryDto,
+  ) {
+    const list =
+      await this.clinicCapabilityProfileService.listCapabilityDefinitionsForAdmin();
+
+    if (!query.type) {
+      return list;
+    }
+
+    return list.filter((item) => item.type === query.type);
+  }
+
+  createCapabilityDefinition(payload: CreateCapabilityDefinitionDto) {
+    return this.clinicCapabilityProfileService.createCapabilityDefinition(
+      payload,
+    );
+  }
+
+  updateCapabilityDefinition(
+    id: number,
+    payload: UpdateCapabilityDefinitionDto,
+  ) {
+    return this.clinicCapabilityProfileService.updateCapabilityDefinition(
+      id,
+      payload,
+    );
+  }
+
+  deleteCapabilityDefinition(id: number) {
+    return this.clinicCapabilityProfileService.deleteCapabilityDefinition(id);
+  }
+
+  getClinicCapabilities(clinicId: number) {
+    return this.clinicCapabilityProfileService.getClinicCapabilities(clinicId);
+  }
+
+  replaceClinicCapabilities(
+    clinicId: number,
+    payload: UpsertClinicCapabilitiesDto,
+    adminUserId: string,
+  ) {
+    return this.clinicCapabilityProfileService.replaceClinicCapabilities(
+      clinicId,
+      payload.items,
+      adminUserId,
+    );
+  }
 
   async getClinicResponses(
     clinicId: number,
@@ -590,10 +666,12 @@ export class ClinicsService {
     payload: ReviewClinicClaimRequestDto,
   ): Promise<ReviewClinicClaimRequestResult> {
     return this.dataSource.transaction(async (manager) => {
-      const claimRequestRepository =
-        manager.getRepository(ClinicClaimRequestEntity);
+      const claimRequestRepository = manager.getRepository(
+        ClinicClaimRequestEntity,
+      );
       const clinicRepository = manager.getRepository(ClinicEntity);
-      const clinicAccountRepository = manager.getRepository(ClinicAccountEntity);
+      const clinicAccountRepository =
+        manager.getRepository(ClinicAccountEntity);
 
       const claimRequest = await claimRequestRepository.findOne({
         where: {
@@ -615,7 +693,8 @@ export class ClinicsService {
         });
       }
 
-      let clinicAccountMeta: ReviewClinicClaimRequestResult['clinicAccount'] = null;
+      let clinicAccountMeta: ReviewClinicClaimRequestResult['clinicAccount'] =
+        null;
       const adminNote = this.toNullableString(payload.note);
 
       if (payload.action === ClaimStatus.Approved) {
@@ -633,12 +712,11 @@ export class ClinicsService {
           });
         }
 
-        const clinicAccount =
-          await clinicAccountRepository.findOne({
-            where: {
-              clinicId: claimRequest.clinicId,
-            },
-          });
+        const clinicAccount = await clinicAccountRepository.findOne({
+          where: {
+            clinicId: claimRequest.clinicId,
+          },
+        });
 
         if (clinicAccount) {
           clinicAccount.status = 1;
@@ -701,25 +779,52 @@ export class ClinicsService {
   ): Promise<SearchClinicsResponse> {
     const keyword = query.keyword.trim();
     const likeKeyword = `%${keyword}%`;
-    const filterParams: Array<string | number> = [likeKeyword];
+    const filterParams: Array<string | number | string[]> = [likeKeyword];
     const conditions = [
       'c.status = 1',
       '(c.name ILIKE $1 OR c.address ILIKE $1)',
     ];
-
-    let latParamIndex = 2;
-    let lngParamIndex = 3;
     let nextParamIndex = 2;
 
     if (query.city?.trim()) {
       conditions.push(`c.city = $${nextParamIndex}`);
       filterParams.push(query.city.trim());
       nextParamIndex += 1;
-      latParamIndex = nextParamIndex;
-      lngParamIndex = nextParamIndex + 1;
     }
 
-    const params: Array<string | number | null> = [
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      filterParams,
+      nextParamIndex,
+      query.serviceCodes,
+      'service',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      filterParams,
+      nextParamIndex,
+      query.specialtyCodes,
+      'specialty',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      filterParams,
+      nextParamIndex,
+      query.equipmentCodes,
+      'equipment',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      filterParams,
+      nextParamIndex,
+      query.facilityCodes,
+      'facility',
+    );
+
+    const latParamIndex = filterParams.length + 1;
+    const lngParamIndex = filterParams.length + 2;
+
+    const params: Array<string | number | string[] | null> = [
       ...filterParams,
       query.lat ?? null,
       query.lng ?? null,
@@ -796,6 +901,10 @@ export class ClinicsService {
       `,
       [...params, query.pageSize, offset],
     );
+    const capabilityMap =
+      await this.clinicCapabilityProfileService.getClinicCapabilitiesMap(
+        rows.map((row) => Number(row.id)),
+      );
 
     return {
       list: rows.map((row) => ({
@@ -811,6 +920,8 @@ export class ClinicsService {
         priceScore: Number(row.priceScore),
         confidenceFactor: Number(row.confidenceFactor),
         isClaimed: Number(row.isClaimed) === 1,
+        capabilityHighlights:
+          capabilityMap.get(Number(row.id))?.highlights ?? [],
       })),
       total,
       page: query.page,
@@ -858,6 +969,10 @@ export class ClinicsService {
           c.business_hours AS "businessHours",
           c.city,
           c.district,
+          c.summary,
+          c.cover_photo_url AS "coverPhotoUrl",
+          c.gallery_photos_json AS "galleryPhotosJson",
+          c.capability_profile_status AS "capabilityProfileStatus",
           c.trust_score AS "trustScore",
           c.value_score AS "valueScore",
           c.experience_score AS "experienceScore",
@@ -884,27 +999,30 @@ export class ClinicsService {
       });
     }
 
-    const tagRows = await this.dataSource.query<ClinicDetailTagRawRow[]>(
-      `
-        SELECT
-          t.id,
-          t.name,
-          t.category,
-          cts.count,
-          cts.unique_users AS "uniqueUsers",
-          cts.status,
-          cts.display_weight AS "displayWeight"
-        FROM clinic_tag_stat AS cts
-        INNER JOIN tag AS t ON t.id = cts.tag_id
-        WHERE cts.clinic_id = $1
-          AND cts.count > 0
-          AND cts.status != 'expired'
-          AND t.status = 1
-          AND t.is_display = 1
-        ORDER BY t.category ASC, cts.count DESC, t.id ASC;
-      `,
-      [id],
-    );
+    const [tagRows, capabilities] = await Promise.all([
+      this.dataSource.query<ClinicDetailTagRawRow[]>(
+        `
+          SELECT
+            t.id,
+            t.name,
+            t.category,
+            cts.count,
+            cts.unique_users AS "uniqueUsers",
+            cts.status,
+            cts.display_weight AS "displayWeight"
+          FROM clinic_tag_stat AS cts
+          INNER JOIN tag AS t ON t.id = cts.tag_id
+          WHERE cts.clinic_id = $1
+            AND cts.count > 0
+            AND cts.status != 'expired'
+            AND t.status = 1
+            AND t.is_display = 1
+          ORDER BY t.category ASC, cts.count DESC, t.id ASC;
+        `,
+        [id],
+      ),
+      this.clinicCapabilityProfileService.getClinicCapabilities(id),
+    ]);
 
     const tags = tagRows.reduce<Record<string, ClinicDetailTagItem[]>>(
       (accumulator, row) => {
@@ -938,6 +1056,12 @@ export class ClinicsService {
       businessHours: clinic.businessHours,
       city: clinic.city,
       district: clinic.district,
+      summary: clinic.summary,
+      coverPhotoUrl: clinic.coverPhotoUrl,
+      galleryPhotos: Array.isArray(clinic.galleryPhotosJson)
+        ? clinic.galleryPhotosJson
+        : [],
+      capabilityProfileStatus: clinic.capabilityProfileStatus,
       scores: {
         trust: Number(clinic.trustScore),
         value: Number(clinic.valueScore),
@@ -949,6 +1073,7 @@ export class ClinicsService {
         confidenceFactor: Number(clinic.confidenceFactor),
       },
       tags,
+      capabilities,
       isClaimed: Number(clinic.isClaimed) === 1,
     };
 
@@ -991,7 +1116,10 @@ export class ClinicsService {
     );
 
     const clinicIds = clinicRows.map((row) => Number(row.id));
-    const tagSummaryMap = await this.loadClinicTagSummaries(clinicIds);
+    const [tagSummaryMap, capabilityMap] = await Promise.all([
+      this.loadClinicTagSummaries(clinicIds),
+      this.clinicCapabilityProfileService.getClinicCapabilitiesMap(clinicIds),
+    ]);
 
     const result = {
       list: clinicRows.map((row) => {
@@ -1000,6 +1128,7 @@ export class ClinicsService {
           topTags: [],
           totalTagCount: 0,
         };
+        const capabilitySummary = capabilityMap.get(clinicId);
 
         return {
           id: clinicId,
@@ -1017,6 +1146,7 @@ export class ClinicsService {
           totalTagCount: tagSummary.totalTagCount,
           totalUsers: Number(row.totalUsers ?? 0),
           isClaimed: Number(row.isClaimed) === 1,
+          capabilityHighlights: capabilitySummary?.highlights ?? [],
         };
       }),
       total,
@@ -1032,7 +1162,7 @@ export class ClinicsService {
   private buildNearbyClinicSql(query: GetNearbyClinicsQueryDto) {
     const pointExpression =
       'ST_SetSRID(ST_MakePoint($2::double precision, $3::double precision), 4326)::geography';
-    const params: Array<string | number | number[]> = [
+    const params: Array<string | number | number[] | string[]> = [
       query.city,
       query.lng,
       query.lat,
@@ -1060,6 +1190,35 @@ export class ClinicsService {
       params.push(query.tagIds);
       nextParamIndex += 1;
     }
+
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      params,
+      nextParamIndex,
+      query.serviceCodes,
+      'service',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      params,
+      nextParamIndex,
+      query.specialtyCodes,
+      'specialty',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      params,
+      nextParamIndex,
+      query.equipmentCodes,
+      'equipment',
+    );
+    nextParamIndex = this.appendCapabilityExistsCondition(
+      conditions,
+      params,
+      nextParamIndex,
+      query.facilityCodes,
+      'facility',
+    );
 
     const sortColumn =
       query.sortType === 'price' ? 'c.price_score' : 'c.reputation_score';
@@ -1173,6 +1332,33 @@ export class ClinicsService {
     return clinicTagSummaryMap;
   }
 
+  private appendCapabilityExistsCondition(
+    conditions: string[],
+    params: Array<string | number | number[] | string[]>,
+    nextParamIndex: number,
+    codes: string[] | undefined,
+    type: 'service' | 'specialty' | 'equipment' | 'facility',
+  ) {
+    if (!codes || codes.length === 0) {
+      return nextParamIndex;
+    }
+
+    conditions.push(`
+      EXISTS (
+        SELECT 1
+        FROM clinic_capability AS cc
+        INNER JOIN capability_definition AS cd ON cd.id = cc.capability_id
+        WHERE cc.clinic_id = c.id
+          AND cc.verification_status = 'verified'
+          AND cd.type = '${type}'::capability_type
+          AND cd.code = ANY($${nextParamIndex}::varchar[])
+      )
+    `);
+    params.push(codes);
+
+    return nextParamIndex + 1;
+  }
+
   private buildNearbyClinicCacheKey(query: GetNearbyClinicsQueryDto) {
     const tagIds =
       query.tagIds && query.tagIds.length > 0
@@ -1190,6 +1376,11 @@ export class ClinicsService {
       query.page,
       query.pageSize,
       tagIds,
+      (query.serviceCodes ?? []).slice().sort().join(',') || 'all-services',
+      (query.specialtyCodes ?? []).slice().sort().join(',') ||
+        'all-specialties',
+      (query.equipmentCodes ?? []).slice().sort().join(',') || 'all-equipment',
+      (query.facilityCodes ?? []).slice().sort().join(',') || 'all-facilities',
     ].join(':');
   }
 

@@ -11,7 +11,7 @@ Page({
       { key: 'reviews', label: '我的评价', page: '/pages/my-reviews/my-reviews' },
       {
         key: 'submissions',
-        label: '我的推荐',
+        label: '我的提交',
         page: '/pages/my-submissions/my-submissions',
       },
       {

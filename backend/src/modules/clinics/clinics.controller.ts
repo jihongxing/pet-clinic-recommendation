@@ -45,6 +45,8 @@ import {
   SearchClinicsResponse,
   SubmitClinicResponseResult,
 } from './clinics.service';
+import { GetCapabilityDefinitionsQueryDto } from './dto/get-capability-definitions-query.dto';
+import { GroupedCapabilityDictionaryResponse } from './services/clinic-capability-profile.service';
 
 @ApiTags('clinics')
 @Controller('clinics')
@@ -73,6 +75,30 @@ export class ClinicsController {
     required: false,
     type: String,
     description: '标签 ID 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'serviceCodes',
+    required: false,
+    type: String,
+    description: '服务能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'specialtyCodes',
+    required: false,
+    type: String,
+    description: '专长能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'equipmentCodes',
+    required: false,
+    type: String,
+    description: '设备能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'facilityCodes',
+    required: false,
+    type: String,
+    description: '设施能力 code 列表，逗号分隔',
   })
   @ApiQuery({
     name: 'city',
@@ -128,6 +154,30 @@ export class ClinicsController {
     description: '经度，用于计算距离',
   })
   @ApiQuery({
+    name: 'serviceCodes',
+    required: false,
+    type: String,
+    description: '服务能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'specialtyCodes',
+    required: false,
+    type: String,
+    description: '专长能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'equipmentCodes',
+    required: false,
+    type: String,
+    description: '设备能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'facilityCodes',
+    required: false,
+    type: String,
+    description: '设施能力 code 列表，逗号分隔',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
@@ -145,6 +195,17 @@ export class ClinicsController {
     @Query() query: SearchClinicsQueryDto,
   ): Promise<SearchClinicsResponse> {
     return this.clinicsService.searchClinics(query);
+  }
+
+  @Get('capability-definitions')
+  @ResponseMessage('success')
+  @ApiOperation({ summary: '获取诊所能力字典' })
+  @ApiOkResponse({ description: '返回按能力类型分组的能力字典' })
+  @READ_RATE_LIMIT
+  getCapabilityDefinitions(
+    @Query() query: GetCapabilityDefinitionsQueryDto,
+  ): Promise<GroupedCapabilityDictionaryResponse> {
+    return this.clinicsService.getCapabilityDefinitions(query);
   }
 
   @Get(':id')

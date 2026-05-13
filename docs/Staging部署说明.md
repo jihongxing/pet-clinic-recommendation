@@ -38,6 +38,12 @@ Copy-Item .env.staging.example .env.staging
 - `WECHAT_SECRET`
 - `GRAFANA_ADMIN_PASSWORD`
 
+另外建议同步确认：
+
+- `SWAGGER_ENABLED=false`
+- `API_PREFIX=/api/v1`
+- `JWT_SECRET` 不是开发默认值
+
 ## 一键部署
 
 ```powershell
@@ -61,6 +67,8 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml ps
 再验证几个关键入口：
 
 - 反向代理健康检查：`http://<server-host>/health`
+- 后端存活探针：`https://<DOMAIN_NAME>/api/v1/health/live`
+- 后端就绪探针：`https://<DOMAIN_NAME>/api/v1/health/ready`
 - HTTPS 入口：`https://<DOMAIN_NAME>`
 - 后端健康检查：`https://<DOMAIN_NAME>/api/v1/health`
 - Prometheus：`http://<server-host>:9090`
@@ -85,6 +93,9 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml ps loki pro
 拉起更新：
 
 ```powershell
+cd backend
+npm run check:release
+cd ..
 docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build
 ```
 
@@ -114,5 +125,6 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml down
 
 补充收尾资料见：
 
+- [发布检查清单](./发布检查清单.md)
 - [数据库备份与恢复说明](./数据库备份与恢复说明.md)
 - [上线回滚方案](./上线回滚方案.md)

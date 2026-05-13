@@ -88,3 +88,28 @@ export enum AbnormalStatus {
   Confirmed = 'confirmed',
   Ignored = 'ignored',
 }
+
+export enum CapabilityProfileStatus {
+  Empty = 'empty',
+  Pending = 'pending',
+  Verified = 'verified',
+}
+
+export enum CapabilityType {
+  Service = 'service',
+  Specialty = 'specialty',
+  Equipment = 'equipment',
+  Facility = 'facility',
+  SpeciesSupported = 'species_supported',
+}
+
+export enum CapabilitySourceType {
+  UserSubmission = 'user_submission',
+  AdminManual = 'admin_manual',
+}
+
+export enum CapabilityVerificationStatus {
+  Pending = 'pending',
+  Verified = 'verified',
+  Rejected = 'rejected',
+}

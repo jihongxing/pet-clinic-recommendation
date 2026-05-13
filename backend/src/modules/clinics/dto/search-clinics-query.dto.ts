@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsLatitude,
   IsLongitude,
   IsOptional,
@@ -9,6 +11,8 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+
+import { ToCapabilityCodeArray } from './shared-capability.dto';
 
 function toNumber(value: unknown) {
   if (typeof value === 'number') {
@@ -57,6 +61,50 @@ export class SearchClinicsQueryDto {
   @Transform(({ value }) => toNumber(value))
   @IsLongitude()
   lng?: number;
+
+  @ApiPropertyOptional({
+    description: '服务筛选 code，逗号分隔',
+    example: 'srv_emergency',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  serviceCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '专长筛选 code，逗号分隔',
+    example: 'sp_cat',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  specialtyCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '设备筛选 code，逗号分隔',
+    example: 'eq_ultrasound',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  equipmentCodes?: string[];
+
+  @ApiPropertyOptional({
+    description: '设施筛选 code，逗号分隔',
+    example: 'fc_inpatient',
+  })
+  @IsOptional()
+  @ToCapabilityCodeArray()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  facilityCodes?: string[];
 
   @ApiPropertyOptional({
     description: '页码',

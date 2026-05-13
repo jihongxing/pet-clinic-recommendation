@@ -56,6 +56,12 @@
   border: 1rpx solid #f0dfd4;
 }
 
+.history-pill--active {
+  background: #d86b4a;
+  color: #ffffff;
+  border-color: #d86b4a;
+}
+
 .state-card {
   padding: 44rpx 28rpx;
   display: flex;
@@ -126,6 +132,13 @@
   flex-wrap: wrap;
   gap: 12rpx;
   margin: 18rpx 0;
+}
+
+.result-card__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 18rpx;
 }
 
 .metric-pill {

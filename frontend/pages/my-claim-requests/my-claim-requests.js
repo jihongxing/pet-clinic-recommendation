@@ -3,7 +3,7 @@ const { request } = require('../../utils/api');
 
 const STATUS_META = {
   pending: {
-    label: '待审核',
+    label: '处理中',
     badgeClass: 'claim-card__status--pending',
   },
   approved: {

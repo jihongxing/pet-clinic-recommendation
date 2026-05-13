@@ -10,10 +10,7 @@ import {
 } from 'typeorm';
 
 import { ClinicSubmissionReviewLogEntity } from './clinic-submission-review-log.entity';
-import {
-  ClinicSubmissionStatus,
-  ClinicSubmissionType,
-} from './database.enums';
+import { ClinicSubmissionStatus, ClinicSubmissionType } from './database.enums';
 import { ClinicEntity } from './clinic.entity';
 import { numericTransformer } from './column.transformer';
 import { UserEntity } from './user.entity';
@@ -90,6 +87,54 @@ export class ClinicSubmissionEntity {
     default: () => "'[]'::jsonb",
   })
   photosJson!: string[];
+
+  @Column({
+    name: 'services_json',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  servicesJson!: string[];
+
+  @Column({
+    name: 'specialties_json',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  specialtiesJson!: string[];
+
+  @Column({
+    name: 'equipment_json',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  equipmentJson!: string[];
+
+  @Column({
+    name: 'facilities_json',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  facilitiesJson!: string[];
+
+  @Column({
+    name: 'species_supported_json',
+    type: 'jsonb',
+    nullable: false,
+    default: () => "'[]'::jsonb",
+  })
+  speciesSupportedJson!: string[];
+
+  @Column({
+    name: 'capability_notes',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  capabilityNotes!: string | null;
 
   @Column({ type: 'varchar', length: 500 })
   reason!: string;

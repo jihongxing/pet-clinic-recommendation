@@ -2,6 +2,14 @@
   padding: 28rpx;
 }
 
+.detail-cover {
+  width: 100%;
+  height: 280rpx;
+  border-radius: 24rpx;
+  margin-bottom: 24rpx;
+  background: #f6ede6;
+}
+
 .detail-card__top {
   display: flex;
   justify-content: space-between;
@@ -121,6 +129,12 @@
 .tag-item__meta {
   color: #7a6c63;
   font-size: 22rpx;
+}
+
+.highlight-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .state-card {

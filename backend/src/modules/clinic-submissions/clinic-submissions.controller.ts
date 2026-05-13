@@ -94,7 +94,8 @@ export class ClinicSubmissionsController {
   @ApiUnauthorizedResponse({ description: '未提供或提供了无效的 Bearer Token' })
   @WRITE_RATE_LIMIT
   uploadSubmissionPhoto(
-    @UploadedFile() file: {
+    @UploadedFile()
+    file: {
       buffer: Buffer;
       originalname: string;
       mimetype: string;
@@ -166,9 +167,7 @@ export class ClinicSubmissionsController {
   @ApiOkResponse({ description: '返回可能重复的候选诊所列表' })
   @ApiUnauthorizedResponse({ description: '未提供或提供了无效的 Bearer Token' })
   @READ_RATE_LIMIT
-  getSubmissionMatches(
-    @Query() query: GetClinicSubmissionMatchesQueryDto,
-  ) {
+  getSubmissionMatches(@Query() query: GetClinicSubmissionMatchesQueryDto) {
     return this.clinicSubmissionsService.getSubmissionMatches(query);
   }
 
@@ -218,6 +217,9 @@ export class ClinicSubmissionsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() payload: CreateClinicSubmissionDto,
   ) {
-    return this.clinicSubmissionsService.createSubmission(user.userId!, payload);
+    return this.clinicSubmissionsService.createSubmission(
+      user.userId!,
+      payload,
+    );
   }
 }

@@ -5,7 +5,7 @@
   </view>
 
   <view class="card type-card">
-    <view class="section-title section-title--compact">提交类型</view>
+    <view class="section-title section-title--compact">这次想补充什么</view>
     <view class="type-list">
       <view
         wx:for="{{submissionTypeOptions}}"
@@ -23,7 +23,7 @@
   <view class="card draft-card">
     <view class="section-head">
       <view class="section-title section-title--compact">已带入的信息</view>
-      <text class="source-badge">{{source}}</text>
+      <text class="source-badge">{{sourceLabel}}</text>
     </view>
 
     <view class="detail-row">
@@ -128,7 +128,7 @@
     <view class="form-field">
       <view class="photo-section__header">
         <text class="form-field__label">诊所照片（可选，最多 3 张）</text>
-        <text class="muted photo-section__hint">上传门头、环境或营业信息照片，便于审核</text>
+        <text class="muted photo-section__hint">上传门头、环境或营业信息照片，能帮助我们更快确认</text>
       </view>
       <button
         class="secondary-button photo-picker-button"
@@ -164,6 +164,47 @@
     </view>
 
     <view class="form-field">
+      <text class="form-field__label">医疗能力（可选）</text>
+      <text class="muted photo-section__hint">这些信息能帮助我们更快了解这家诊所能提供什么服务。</text>
+      <view wx:if="{{loadingCapabilities}}" class="capability-loading">正在加载可选服务信息...</view>
+      <view wx:else class="capability-groups">
+        <view
+          wx:for="{{capabilityGroups}}"
+          wx:key="key"
+          wx:for-item="group"
+          class="capability-group"
+        >
+          <view class="capability-group__title">{{group.title}}</view>
+          <view class="capability-group__options">
+            <view
+              wx:for="{{group.options}}"
+              wx:key="code"
+              wx:for-item="option"
+              class="capability-option {{option.selected ? 'capability-option--active' : ''}}"
+              data-group="{{group.key}}"
+              data-code="{{option.code}}"
+              bindtap="onCapabilityToggle"
+            >
+              {{option.name}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-field">
+      <text class="form-field__label">服务补充说明</text>
+      <textarea
+        class="form-field__textarea"
+        data-field="capabilityNotes"
+        value="{{form.capabilityNotes}}"
+        placeholder="例如：夜间值班、B超需预约、猫咪友好诊室等"
+        maxlength="500"
+        bindinput="onFieldInput"
+      />
+    </view>
+
+    <view class="form-field">
       <text class="form-field__label">推荐 / 纠错说明</text>
       <textarea
         class="form-field__textarea"
@@ -184,7 +225,7 @@
       >
         {{checkingMatches ? '检查中...' : '先检查是否已存在'}}
       </button>
-      <text class="muted match-actions__hint">提交前会自动再做一次重复检查</text>
+      <text class="muted match-actions__hint">提交前会再帮你确认一次是否已经收录</text>
     </view>
 
     <view wx:if="{{matchedClinics.length > 0}}" class="match-panel">

@@ -60,9 +60,13 @@ export class ClinicSubmissionReviewLogEntity {
   })
   createdAt!: Date;
 
-  @ManyToOne(() => ClinicSubmissionEntity, (submission) => submission.reviewLogs, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(
+    () => ClinicSubmissionEntity,
+    (submission) => submission.reviewLogs,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'submission_id' })
   submission!: ClinicSubmissionEntity;
 }

@@ -12,6 +12,8 @@ import {
   ClinicSubmissionType,
   UserEntity,
 } from '../../database/entities';
+import { ClinicCacheService } from '../clinics/services/clinic-cache.service';
+import { ClinicCapabilityProfileService } from '../clinics/services/clinic-capability-profile.service';
 import { ClinicSubmissionsService } from './clinic-submissions.service';
 
 describe('ClinicSubmissionsService', () => {
@@ -25,10 +27,38 @@ describe('ClinicSubmissionsService', () => {
   >;
   let adminUserRepository: jest.Mocked<Repository<AdminUserEntity>>;
   let dataSource: { query: jest.Mock };
+  let clinicCacheService: { invalidateAfterReview: jest.Mock };
+  let clinicCapabilityProfileService: {
+    validateSubmissionCapabilities: jest.Mock;
+    applySubmissionToClinicProfile: jest.Mock;
+    buildSubmissionCapabilitySnapshot: jest.Mock;
+  };
 
   beforeEach(async () => {
     dataSource = {
       query: jest.fn(),
+    };
+    clinicCacheService = {
+      invalidateAfterReview: jest.fn(),
+    };
+    clinicCapabilityProfileService = {
+      validateSubmissionCapabilities: jest.fn().mockResolvedValue({
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        capabilityNotes: null,
+      }),
+      applySubmissionToClinicProfile: jest.fn().mockResolvedValue(undefined),
+      buildSubmissionCapabilitySnapshot: jest.fn().mockResolvedValue({
+        services: [],
+        specialties: [],
+        equipment: [],
+        facilities: [],
+        speciesSupported: [],
+        capabilityNotes: null,
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -37,6 +67,14 @@ describe('ClinicSubmissionsService', () => {
         {
           provide: DataSource,
           useValue: dataSource,
+        },
+        {
+          provide: ClinicCacheService,
+          useValue: clinicCacheService,
+        },
+        {
+          provide: ClinicCapabilityProfileService,
+          useValue: clinicCapabilityProfileService,
         },
         {
           provide: getRepositoryToken(AdminUserEntity),
@@ -84,9 +122,11 @@ describe('ClinicSubmissionsService', () => {
     adminUserRepository = module.get(getRepositoryToken(AdminUserEntity));
     dataSource.query.mockReset();
     (dataSource as { transaction?: jest.Mock }).transaction = jest.fn(
-      async (callback: (manager: {
-        getRepository: (entity: unknown) => unknown;
-      }) => unknown) =>
+      async (
+        callback: (manager: {
+          getRepository: (entity: unknown) => unknown;
+        }) => unknown,
+      ) =>
         callback({
           getRepository: (entity: unknown) => {
             if (entity === ClinicSubmissionEntity) {
@@ -119,7 +159,9 @@ describe('ClinicSubmissionsService', () => {
     });
 
     expect(dataSource.query).toHaveBeenCalledWith(
-      expect.not.stringContaining('ST_MakePoint($5::double precision, $4::double precision)'),
+      expect.not.stringContaining(
+        'ST_MakePoint($5::double precision, $4::double precision)',
+      ),
       [
         '%测试联调宠物诊所%',
         '%上海市浦东新区花木路 188 号%',
@@ -360,6 +402,14 @@ describe('ClinicSubmissionsService', () => {
       },
     });
     expect(result.photos).toEqual(['https://example.com/1.jpg']);
+    expect(result.submittedCapabilities).toEqual({
+      services: [],
+      specialties: [],
+      equipment: [],
+      facilities: [],
+      speciesSupported: [],
+      capabilityNotes: null,
+    });
     expect(result.potentialMatches[0]).toMatchObject({
       clinicId: 12,
       matchScore: 100,
@@ -581,6 +631,7 @@ describe('ClinicSubmissionsService', () => {
     expect(result).toMatchObject({
       id: 1003,
       status: ClinicSubmissionStatus.Merged,
+      clinicId: 12,
       matchedClinicId: 12,
       reviewLogId: 502,
     });
@@ -619,7 +670,11 @@ describe('ClinicSubmissionsService', () => {
       lng: 116.47,
       phone: ' 010-12345678 ',
       businessHours: ' 09:00-21:00 ',
-      photos: [' https://example.com/1.jpg ', '   ', 'https://example.com/2.jpg'],
+      photos: [
+        ' https://example.com/1.jpg ',
+        '   ',
+        'https://example.com/2.jpg',
+      ],
       reason: '  附近没有这家诊所  ',
     });
 
@@ -636,6 +691,12 @@ describe('ClinicSubmissionsService', () => {
       phone: '010-12345678',
       businessHours: '09:00-21:00',
       photosJson: ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+      servicesJson: [],
+      specialtiesJson: [],
+      equipmentJson: [],
+      facilitiesJson: [],
+      speciesSupportedJson: [],
+      capabilityNotes: null,
       reason: '附近没有这家诊所',
       status: ClinicSubmissionStatus.PendingReview,
       matchedClinicId: null,

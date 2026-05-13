@@ -7,7 +7,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import axios from 'axios';
-import { compare } from 'bcryptjs';
 import { Repository } from 'typeorm';
 
 import {
@@ -160,7 +159,9 @@ describe('AuthService', () => {
   });
 
   it('logs in an admin user with username and password', async () => {
-    const passwordHash = await (await import('bcryptjs')).hash('Admin123456!', 10);
+    const passwordHash = await (
+      await import('bcryptjs')
+    ).hash('Admin123456!', 10);
     adminUserRepository.findOne.mockResolvedValue({
       id: '902',
       username: 'review_admin',
@@ -170,7 +171,9 @@ describe('AuthService', () => {
       createdAt: new Date('2026-05-12T00:00:00.000Z'),
       lastLoginAt: null,
     } as AdminUserEntity);
-    adminUserRepository.save.mockImplementation(async (entity) => entity as AdminUserEntity);
+    adminUserRepository.save.mockImplementation(
+      async (entity) => entity as AdminUserEntity,
+    );
 
     const result = await service.loginAdmin({
       username: 'review_admin',
@@ -194,7 +197,9 @@ describe('AuthService', () => {
   });
 
   it('logs in a clinic account with username and password', async () => {
-    const passwordHash = await (await import('bcryptjs')).hash('Clinic@12888', 10);
+    const passwordHash = await (
+      await import('bcryptjs')
+    ).hash('Clinic@12888', 10);
     clinicAccountRepository.findOne.mockResolvedValue({
       id: '301',
       clinicId: 12,

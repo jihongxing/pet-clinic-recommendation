@@ -1,4 +1,12 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -30,7 +38,9 @@ export class AdminAuthController {
   @ApiOperation({ summary: '管理员登录并返回后台 JWT' })
   @ApiBody({ type: AdminLoginDto })
   @ApiOkResponse({ description: '返回管理员 Bearer Token 与当前管理员信息' })
-  @ApiUnauthorizedResponse({ description: '用户名或密码错误，或管理员账号已停用' })
+  @ApiUnauthorizedResponse({
+    description: '用户名或密码错误，或管理员账号已停用',
+  })
   @LOGIN_RATE_LIMIT
   login(@Body() payload: AdminLoginDto) {
     return this.authService.loginAdmin(payload);
@@ -42,7 +52,9 @@ export class AdminAuthController {
   @ResponseMessage('success')
   @ApiOperation({ summary: '获取当前登录管理员信息' })
   @ApiOkResponse({ description: '返回当前管理员身份信息' })
-  @ApiUnauthorizedResponse({ description: '未提供或提供了无效的管理员 Bearer Token' })
+  @ApiUnauthorizedResponse({
+    description: '未提供或提供了无效的管理员 Bearer Token',
+  })
   @READ_RATE_LIMIT
   getSession(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.getAdminSession(user.adminUserId!);

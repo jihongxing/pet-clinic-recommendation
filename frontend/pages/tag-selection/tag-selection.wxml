@@ -1,13 +1,13 @@
 <view class="page-shell review-page">
   <view class="card review-hero">
-    <view class="review-hero__eyebrow">结构化反馈</view>
+    <view class="review-hero__eyebrow">真实体验</view>
     <view class="review-hero__title">
       {{clinicName ? ('帮「' + clinicName + '」留下一次真实反馈') : '留下这次就诊体验'}}
     </view>
     <view class="review-hero__meta">
-      <text class="review-hero__badge">{{source === 'order' ? '预约评价' : '普通评价'}}</text>
+      <text class="review-hero__badge">{{source === 'order' ? '就诊后评价' : '分享感受'}}</text>
       <text class="muted review-hero__hint">
-        {{source === 'order' ? '系统会按预约来源校验并计入更高权重' : '未绑定预约也可以提交普通反馈'}}
+        {{source === 'order' ? '有预约记录会更容易核实' : '也欢迎直接说说这次感受'}}
       </text>
     </view>
 
@@ -19,7 +19,7 @@
       <view class="stepper__line {{step >= 2 ? 'stepper__line--active' : ''}}"></view>
       <view class="stepper__item {{step >= 2 ? 'stepper__item--active' : ''}}">
         <text class="stepper__index">2</text>
-        <text>选原因</text>
+        <text>选感受</text>
       </view>
       <view class="stepper__line {{step >= 3 ? 'stepper__line--active' : ''}}"></view>
       <view class="stepper__item {{step >= 3 ? 'stepper__item--active' : ''}}">
@@ -31,7 +31,7 @@
 
   <view class="section">
     <view class="section-title">这次就诊体验怎么样？</view>
-    <view class="muted section-subtitle">先用一个情绪快速定调，后面的原因标签会跟着变化</view>
+    <view class="muted section-subtitle">先选一个整体感受，后面会出现更贴近的选项</view>
     <view class="emotion-grid">
       <view
         wx:for="{{emotions}}"
@@ -48,13 +48,13 @@
   </view>
 
   <view wx:if="{{configLoading}}" class="card state-card">
-    正在加载对应的原因标签...
+    正在加载相关选项...
   </view>
 
   <view wx:if="{{step >= 2 && !configLoading && emotion}}" class="section">
     <view class="section-heading">
       <view>
-        <view class="section-title">{{title || '请选择原因'}}</view>
+        <view class="section-title">{{title || '选几个最贴近的感受'}}</view>
         <view class="muted section-subtitle">
           已选 {{selectedTagIds.length}} / {{limits.maxSelect}}，至少 {{limits.minSelect}} 个
         </view>
@@ -90,14 +90,14 @@
       <view>
         <view class="section-title">还有哪些补充印象？</view>
         <view class="muted section-subtitle">
-          最多再补充 {{limits.maxExtra}} 个标签，这一步可以跳过
+          最多再补充 {{limits.maxExtra}} 个印象，这一步可以跳过
         </view>
       </view>
       <text class="section-action" bindtap="backToReasons">返回上一步</text>
     </view>
 
     <view class="summary-card card">
-      <text class="summary-card__label">已选原因</text>
+      <text class="summary-card__label">已选感受</text>
       <view class="summary-card__tags">
         <text
           wx:for="{{selectedReasonOptions}}"
@@ -122,7 +122,7 @@
     </view>
 
     <view wx:else class="card state-card state-card--compact">
-      当前情绪下没有额外补充标签，已经可以直接提交
+      这个整体感受下暂时没有更多可补充的印象，已经可以直接提交
     </view>
 
     <view class="text-card card">
@@ -130,7 +130,7 @@
         <view>
           <view class="text-card__title">还想补充一句吗？</view>
           <view class="muted text-card__hint">
-            这段文字只做留存展示，不参与首页排序，可以留空
+            如果你愿意，也可以再补充一句，留空也没关系
           </view>
         </view>
         <text class="text-card__counter">{{reviewText.length}} / {{reviewTextLimit}}</text>
