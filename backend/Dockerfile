@@ -4,7 +4,7 @@ WORKDIR /app
 
 FROM base AS deps
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 FROM deps AS dev
@@ -34,7 +34,7 @@ FROM base AS production
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist

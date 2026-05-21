@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtModuleOptions, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -21,13 +21,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('auth.jwtSecret') ?? 'dev_only_change_me',
-        signOptions: {
-          expiresIn: configService.get<string>('auth.jwtExpiresIn') ?? '7d',
-        },
-      }),
+      useFactory: (configService: ConfigService): JwtModuleOptions => {
+        const expiresIn =
+          configService.get<string>('auth.jwtExpiresIn') ?? '7d';
+
+        return {
+          secret:
+            configService.get<string>('auth.jwtSecret') ?? 'dev_only_change_me',
+          signOptions: {
+            expiresIn: expiresIn as JwtSignOptions['expiresIn'],
+          },
+        };
+      },
     }),
     TypeOrmModule.forFeature([
       AdminUserEntity,

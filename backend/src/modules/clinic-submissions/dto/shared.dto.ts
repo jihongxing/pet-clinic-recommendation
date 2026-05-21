@@ -21,7 +21,7 @@ export function toStringArray(value: unknown) {
     try {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [value];
-    } catch (error) {
+    } catch {
       return [value];
     }
   }

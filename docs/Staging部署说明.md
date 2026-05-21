@@ -18,6 +18,7 @@
 - 容器启动时自动执行 migrations
 - 通过 Nginx 暴露统一入口
 - 支持按 `DOMAIN_NAME` 渲染 HTTPS 域名与证书路径
+- 持久化用户上传图片到独立 volume，避免重建后丢失推荐材料
 - 保留 Prometheus / Alertmanager / Grafana
 - 通过 Loki + Promtail 汇总后端与 Nginx 日志
 
@@ -76,6 +77,8 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml ps
 - Grafana：`http://<server-host>:3001`
 - Loki：`http://<server-host>:3100/ready`
 
+安全说明：Prometheus、Alertmanager、Grafana、Loki 的端口默认只绑定到 `127.0.0.1`。远程查看建议使用 SSH 隧道，或在服务器侧通过内网访问，不要直接暴露到公网。
+
 ## 常用运维命令
 
 查看日志：
@@ -110,6 +113,7 @@ docker compose --env-file .env.staging -f docker-compose.staging.yml down
 当前 staging 已具备这几项生产可观测性能力：
 
 - 后端 JSON 结构化日志按天滚动写入持久卷
+- 用户上传图片写入 `backend_staging_uploads` 持久卷
 - Nginx access/error 日志写入持久卷
 - Promtail 自动采集 backend / nginx 日志并推送到 Loki
 - Grafana 同时接入 Prometheus 和 Loki
